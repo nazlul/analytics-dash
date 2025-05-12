@@ -5,7 +5,6 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Icons } from "@/components/ui/icons";
 
 interface UserAuthFormProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -81,7 +80,7 @@ export function UserAuthForm({ className, type, ...props }: UserAuthFormProps) {
     const initializeGoogle = () => {
       if (window.google && window.google.accounts) {
         window.google.accounts.id.initialize({
-          client_id: "YOUR_GOOGLE_CLIENT_ID",
+          client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!,
           callback: async (credentialResponse: any) => {
             setIsLoading(true);
             const googleToken = credentialResponse.credential;
@@ -147,60 +146,15 @@ export function UserAuthForm({ className, type, ...props }: UserAuthFormProps) {
               className="mt-2"
             />
             {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}
-
-            {isSignup && (
-              <ul className="grid grid-cols-2 text-xs text-muted-foreground mt-2 space-y-1">
-                <li className="flex items-center gap-2">
-                  <Checkbox checked={passwordValid.minLength} disabled className="w-3 h-3" />
-                  8 Characters Minimum
-                </li>
-                <li className="flex items-center gap-2">
-                  <Checkbox checked={passwordValid.hasUppercase} disabled className="w-3 h-3" />
-                  One Uppercase Character
-                </li>
-                <li className="flex items-center gap-2">
-                  <Checkbox checked={passwordValid.hasLowercase} disabled className="w-3 h-3" />
-                  One Lowercase Character
-                </li>
-                <li className="flex items-center gap-2">
-                  <Checkbox checked={passwordValid.hasNumber} disabled className="w-3 h-3" />
-                  One Numeric Number
-                </li>
-                <li className="flex items-center gap-2 col-span-2">
-                  <Checkbox checked={passwordValid.hasSpecialChar} disabled className="w-3 h-3" />
-                  One Special Character
-                </li>
-              </ul>
-            )}
           </div>
-
-          {isSignup && (
-            <div className="flex items-center space-x-2">
-              <Checkbox id="agree" checked={agree} onCheckedChange={(val) => setAgree(Boolean(val))} />
-              <Label htmlFor="agree" className="text-sm">
-                I agree to the terms and conditions
-              </Label>
-            </div>
-          )}
           {errors.checkbox && <p className="text-red-500 text-sm">{errors.checkbox}</p>}
 
-          <Button type="submit" disabled={isLoading}>
+          <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading && <Icons.spinner className="mr-2 h-4 animate-spin" />}
             {type === "signin" ? "Sign In" : "Sign Up"}
           </Button>
         </div>
       </form>
-
-      <div className="relative">
-        <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t" />
-        </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
-        </div>
-      </div>
-
-      <div id="google-button" className="flex justify-center" />
     </div>
   );
 }
