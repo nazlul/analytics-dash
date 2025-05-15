@@ -1,9 +1,17 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from app.models.user import User
 from app.auth import routes as auth_routes
 from app.database import Base, engine
 
-app = FastAPI()
+Base.metadata.create_all(bind=engine)
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    yield
+
+app = FastAPI(lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -14,7 +22,3 @@ app.add_middleware(
 )
 
 app.include_router(auth_routes.router, prefix="/api")
-
-@app.on_event("startup")
-def startup():
-    Base.metadata.create_all(bind=engine)

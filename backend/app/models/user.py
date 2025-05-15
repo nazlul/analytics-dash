@@ -1,19 +1,10 @@
-from sqlalchemy import Column, String, Boolean
-from sqlalchemy.ext.declarative import declarative_base
-from app.database import db_session
-
-Base = declarative_base()
+from sqlalchemy import Column, Integer, String, Boolean
+from app.database import Base
 
 class User(Base):
-    __tablename__ = "users"
-    email = Column(String, primary_key=True)
-    password = Column(String, nullable=True)  
+    __tablename__ = 'users'
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String, unique=True, index=True)
+    hashed_password = Column(String)
     is_google = Column(Boolean, default=False)
-
-def get_user_by_email(db, email):
-    return db.query(User).filter(User.email == email).first()
-
-def create_user(db, email, password=None, is_google=False):
-    user = User(email=email, password=password, is_google=is_google)
-    db.add(user)
-    db.commit()
+    is_verified = Column(Boolean, default=False)

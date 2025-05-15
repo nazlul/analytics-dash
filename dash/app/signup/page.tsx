@@ -31,6 +31,8 @@ export default function SignupPage() {
     hasSpecialChar: false,
   })
 
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+
   function validatePassword(password: string) {
     return {
       minLength: password.length >= 8,
@@ -55,35 +57,38 @@ export default function SignupPage() {
 
     const allPasswordChecksPassed = Object.values(passwordValid).every(Boolean)
     if (!allPasswordChecksPassed) {
-      alert("Password does not meet all requirements.")
+      setErrorMessage("Password does not meet all requirements.")
       return
     }
 
     if (form.password !== form.confirmPassword) {
-      alert("Passwords do not match.")
+      setErrorMessage("Passwords do not match.")
       return
     }
 
     if (!form.agree) {
-      alert("You must agree to the terms and privacy policy.")
+      setErrorMessage("You must agree to the terms and privacy policy.")
       return
     }
 
     setIsLoading(true)
     try {
-      const res = await fetch("http://localhost:8000/api/manual-register", {
+      const res = await fetch("http://localhost:8000/api/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: form.email, password: form.password }),
+        body: JSON.stringify({ name: form.name, email: form.email, password: form.password }),
       })
 
       const data = await res.json()
-      if (!res.ok) throw new Error(data.error || "Signup failed")
+      if (!res.ok) throw new Error(data.detail || "Registration failed")
 
-      alert("Account created successfully!")
-      window.location.href = "/dashboard"
+      setErrorMessage(null)
+      localStorage.setItem("registeredEmail", form.email)
+      alert("Account created successfully! Please check your email to verify.")
+      window.open("https://mail.google.com/mail/u/0/#inbox", "_blank");
+      window.location.href = "/verify-email"
     } catch (err: any) {
-      alert(err.message)
+      setErrorMessage(err.message || "An error occurred")
     } finally {
       setIsLoading(false)
     }
@@ -93,6 +98,18 @@ export default function SignupPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <div className="w-full max-w-md bg-white rounded-xl shadow-lg p-6 space-y-6">
         <h2 className="text-2xl font-semibold text-center">Create an Account</h2>
+
+        {errorMessage && (
+          <div className="absolute top-4 right-4 bg-red-600 text-white p-2 rounded-md shadow-md flex items-center gap-2">
+            <span>{errorMessage}</span>
+            <button
+              className="text-white font-bold"
+              onClick={() => setErrorMessage(null)}
+            >
+              ×
+            </button>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
