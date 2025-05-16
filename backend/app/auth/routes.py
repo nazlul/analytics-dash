@@ -1,12 +1,14 @@
-
 import os
+import requests 
 from dotenv import load_dotenv
 from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, Field
 from typing import Optional
 from app.database import get_db 
 from app.models import delete_user_by_email, get_user_by_email, create_user
+from fastapi import Response, Cookie
 from app.auth import utils
 from app import config
 from jose import JWTError, jwt
@@ -23,6 +25,9 @@ class RegisterRequest(BaseModel):
     email: str
     password: str
 
+class User(BaseModel):
+    email: str
+    
 class ResendEmailRequest(BaseModel):
     email: str
 
@@ -45,11 +50,15 @@ def register(data: RegisterRequest, db: Session = Depends(get_db)):
 
     token = utils.create_email_verification_token(data.email)
     print("🔑 Email verification token:", token)
-    print("✅ Reached email sending logic.")  
+    verify_link = f"http://localhost:3000/verify-email?token={token}"  
     utils.send_verification_email(data.email, token)
     # utils.send_verification_email(data.email, token)
 
-    return {"message": "Registration successful. Please check your email to verify."}
+    return {
+        "message": "Registration successful. Please check your email to verify.",
+        "verify_link": verify_link,
+        "open_gmail": "https://mail.google.com/"
+        }
 
 @router.get("/verify-email")
 def verify_email(token: str, db: Session = Depends(get_db)):
@@ -89,10 +98,25 @@ def login(data: LoginRequest, db: Session = Depends(get_db)):
     if not utils.verify_password(data.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid password")
 
-    token = utils.create_jwt(data.email, remember_me=data.remember_me)  
-    redirect_url = "/dashboard" if user.is_verified else "/verify-email"
+    access_token = utils.create_access_token(data.email)
+    refresh_token = utils.create_refresh_token(data.email, remember_me=data.remember_me)
 
-    return {"access_token": token, "redirect_url": redirect_url}
+    response = JSONResponse(content={
+        "message": "Login successful",
+        "redirect_url": "/dashboard"
+    })
+
+    response.set_cookie(
+    key="refresh_token",
+    value=refresh_token,
+    httponly=True,
+    secure=True,
+    samesite="strict",
+    max_age=60 * 60 * 24 * 90
+    )
+    
+    return {"access_token": access_token, "redirect_url": "/dashboard"}
+
 
 @router.post("/google-login")
 async def google_login(data: GoogleLoginRequest, db: Session = Depends(get_db)):
@@ -105,12 +129,47 @@ async def google_login(data: GoogleLoginRequest, db: Session = Depends(get_db)):
     if not user:
         create_user(db, email=email, password=None, is_google=True)
 
-    token = utils.create_jwt(email)
+    token = utils.create_token(email)
     return {"access_token": token}
 
+@router.post("/refresh-token")
+def refresh_token(request: Request):
+    token = request.cookies.get("refresh_token")
+    if not token:
+        raise HTTPException(status_code=401, detail="Refresh token missing")
+
+    try:
+        payload = jwt.decode(token, SECRET, algorithms=["HS256"])
+        email = payload.get("email")
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
+
+    new_access_token = utils.create_access_token(email)
+    return {"access_token": new_access_token}
+
+@router.get("/api/protected")
+def get_facebook_ad_data(current_user: User = Depends(utils.get_current_user)):
+    fb_access_token = "facebook_access_token"
+    ad_account_id = "1234567890"
+    
+    url = f"https://graph.facebook.com/v19.0/{ad_account_id}/insights"
+    params = {
+        "access_token": fb_access_token,
+        "fields": "campaign_name,clicks,impressions,cpc,ctr",
+        "date_preset": "last_30d"
+    }
+
+    res = requests.get(url, params=params)
+    data = res.json()
+
+    return {"dashboard": data["data"]}
+
+
 @router.post("/logout")
-def logout(request: Request):
+def logout(response: Response):
+    response.delete_cookie("refresh_token")
     return {"message": "Logged out"}
+
 
 @router.delete("/delete-user")
 def delete_user(email: str = Query(...), db: Session = Depends(get_db)):

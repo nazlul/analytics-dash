@@ -86,7 +86,7 @@ export default function SignupPage() {
       localStorage.setItem("registeredEmail", form.email)
       alert("Account created successfully! Please check your email to verify.")
       window.open("https://mail.google.com/mail/u/0/#inbox", "_blank");
-      window.location.href = "/verify-email"
+      window.location.href = data.verify_link
     } catch (err: any) {
       setErrorMessage(err.message || "An error occurred")
     } finally {
@@ -149,7 +149,7 @@ export default function SignupPage() {
             />
             <button
               type="button"
-              className="absolute right-2 top-9 text-gray-500"
+              className="absolute right-2 top-7 text-gray-500"
               onClick={() => setShowPassword((prev) => !prev)}
             >
               {showPassword ? <Eye size={16} /> : <EyeOff size={16} />}
@@ -192,7 +192,7 @@ export default function SignupPage() {
             />
             <button
               type="button"
-              className="absolute right-2 top-9 text-gray-500"
+              className="absolute right-2 top-7 text-gray-500"
               onClick={() => setShowConfirmPassword((prev) => !prev)}
             >
               {showConfirmPassword ? <Eye size={16} /> : <EyeOff size={16} />}
@@ -230,7 +230,7 @@ export default function SignupPage() {
 
         <p className="text-sm text-center text-muted-foreground">
           Already have an account?{" "}
-          <Link href="/signin" className="text-blue-600 underline underline-offset-4 hover:text-primary">
+          <Link href="/users/signin" className="text-blue-600 underline underline-offset-4 hover:text-primary">
             Sign in
           </Link>
         </p>

@@ -1,4 +1,5 @@
 import os
+import uuid
 from datetime import datetime, timedelta, timezone
 import smtplib
 from dotenv import load_dotenv
@@ -7,6 +8,25 @@ from typing import Optional
 from jose import jwt, JWTError
 import httpx
 from email.message import EmailMessage
+from fastapi import Request, HTTPException, status, Depends
+from fastapi.security import OAuth2PasswordBearer
+from app.auth.schemas import User
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token") 
+
+async def get_current_user(request: Request, token: str = Depends(oauth2_scheme)) -> User:
+    cookie_token = request.cookies.get("access_token")
+
+    token_to_use = cookie_token or token
+    if not token_to_use:
+        raise HTTPException(status_code=401, detail="Missing token")
+
+    payload = decode_token(token_to_use)
+    if not payload or "email" not in payload:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+
+    return User(email=payload["email"])
+
 
 load_dotenv()
 
@@ -49,6 +69,7 @@ def send_verification_email(email: str, token: str):
 def create_token(data: dict, expires_delta: timedelta) -> str:
     to_encode = data.copy()
     to_encode["exp"] = datetime.now(timezone.utc) + expires_delta
+    to_encode["jti"] = str(uuid.uuid4())
     return jwt.encode(to_encode, SECRET, algorithm="HS256")
 
 def create_access_token(email: str) -> str:
@@ -56,7 +77,7 @@ def create_access_token(email: str) -> str:
 
 def create_refresh_token(email: str, remember_me: bool = False) -> str:
     if remember_me:
-        return create_token({"email": email}, timedelta(days=365 * 10)) 
+        return create_token({"email": email}, timedelta(days=90)) 
     return create_token({"email": email}, timedelta(days=30))
 
 def decode_token(token: str) -> Optional[dict]:

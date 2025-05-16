@@ -18,8 +18,8 @@ export function UserAuthForm({ className, type, ...props }: UserAuthFormProps) {
   const [password, setPassword] = React.useState("");
   const [showPassword, setShowPassword] = React.useState(false);
   const [agree, setAgree] = React.useState(false);
-  const [errors, setErrors] = React.useState<{ email?: string; password?: string; checkbox?: string; general?: string; }>({});
-  const [rememberMe, setRememberMe] = React.useState(false);
+  const [errors, setErrors] = React.useState<{ email?: string; password?: string; checkbox?: string }>({});
+  const [formMessage, setFormMessage] = React.useState<{ type: "error" | "success"; text: string } | null>(null);
 
   const isSignup = type === "signup";
 
@@ -54,6 +54,7 @@ export function UserAuthForm({ className, type, ...props }: UserAuthFormProps) {
     if (isSignup && !agree) newErrors.checkbox = "You must agree to continue";
 
     setErrors(newErrors);
+    setFormMessage(null);
     return Object.keys(newErrors).length === 0;
   };
 
@@ -62,40 +63,33 @@ export function UserAuthForm({ className, type, ...props }: UserAuthFormProps) {
     if (!validate()) return;
 
     setIsLoading(true);
-    setErrors({});
+    setFormMessage(null);
 
-    try {
     const res = await fetch(`http://localhost:8000/api/${type === "signin" ? "login" : "register"}`, {
       method: "POST",
-      credentials: "include",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ 
-        email, 
-        password,
-        ...(type === "signin" && { remember_me: rememberMe }),
-      }),
+      body: JSON.stringify({ email, password }),
     });
 
     const data = await res.json();
 
-    if (!res.ok) {
-      setErrors({ general: data.detail || "Something went wrong" });
-      return;
-    }
-
-    if (data.access_token) {
-      localStorage.setItem("access_token", data.access_token);
-      window.location.href = data.redirect_url || "/dashboard";
+    if (res.ok) {
+      setFormMessage({ type: "success", text: `${type === "signin" ? "Login" : "Signup"} successful! Redirecting...` });
+      setTimeout(() => {
+        window.location.href = "/dashboard";
+      }, 1500);
     } else {
-      setErrors({ general: "No token returned" });
+      const newErrors: typeof errors = {};
+      if (data.detail === "Incorrect password") newErrors.password = "Incorrect password";
+      else if (data.detail === "Email not found") newErrors.email = "Email does not exist";
+      else if (data.detail === "Email not verified") newErrors.email = "Email not verified. Please check your inbox.";
+      else setFormMessage({ type: "error", text: data.detail || "An error occurred." });
+
+      setErrors(newErrors);
     }
 
-  } catch (error) {
-    setErrors({ general: "Network error" });
-  } finally {
     setIsLoading(false);
   }
-}
 
   React.useEffect(() => {
     const initializeGoogle = () => {
@@ -114,19 +108,22 @@ export function UserAuthForm({ className, type, ...props }: UserAuthFormProps) {
 
             const data = await res.json();
             if (res.ok) {
-              alert("Google login successful!");
-              window.location.href = "/dashboard";
+              setFormMessage({ type: "success", text: "Google login successful! Redirecting..." });
+              setTimeout(() => {
+                window.location.href = "/dashboard";
+              }, 1500);
             } else {
-              alert(data.error || "Google login failed");
+              setFormMessage({ type: "error", text: data.error || "Google login failed" });
             }
+
             setIsLoading(false);
           },
         });
 
-        window.google.accounts.id.renderButton(
-          document.getElementById("google-button"),
-          { theme: "outline", size: "large" }
-        );
+        window.google.accounts.id.renderButton(document.getElementById("google-button"), {
+          theme: "outline",
+          size: "large",
+        });
       }
     };
 
@@ -182,24 +179,11 @@ export function UserAuthForm({ className, type, ...props }: UserAuthFormProps) {
           {isSignup && (
             <ul className="text-sm mt-2 ml-1 space-y-1">
               <li className={passwordValid.minLength ? "text-green-600" : "text-gray-500"}>• At least 8 characters</li>
-              <li className={passwordValid.hasUppercase ? "text-green-600" : "text-gray-500"}>• At least one uppercase letter</li>
-              <li className={passwordValid.hasLowercase ? "text-green-600" : "text-gray-500"}>• At least one lowercase letter</li>
-              <li className={passwordValid.hasNumber ? "text-green-600" : "text-gray-500"}>• At least one number</li>
-              <li className={passwordValid.hasSpecialChar ? "text-green-600" : "text-gray-500"}>• At least one special character</li>
+              <li className={passwordValid.hasUppercase ? "text-green-600" : "text-gray-500"}>• One uppercase letter</li>
+              <li className={passwordValid.hasLowercase ? "text-green-600" : "text-gray-500"}>• One lowercase letter</li>
+              <li className={passwordValid.hasNumber ? "text-green-600" : "text-gray-500"}>• One number</li>
+              <li className={passwordValid.hasSpecialChar ? "text-green-600" : "text-gray-500"}>• One special character</li>
             </ul>
-          )}
-          
-          {type === "signin" && (
-            <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                id="rememberMe"
-                checked={rememberMe}
-                onChange={() => setRememberMe(!rememberMe)}
-                disabled={isLoading}
-              />
-              <Label htmlFor="rememberMe">Remember Me</Label>
-            </div>
           )}
 
           {isSignup && (
@@ -220,8 +204,16 @@ export function UserAuthForm({ className, type, ...props }: UserAuthFormProps) {
             {isLoading && <Icons.spinner className="mr-2 h-4 animate-spin" />}
             {type === "signin" ? "Sign In" : "Sign Up"}
           </Button>
+
+          {formMessage && (
+            <p className={`text-sm mt-3 ${formMessage.type === "error" ? "text-red-600" : "text-green-600"}`}>
+              {formMessage.text}
+            </p>
+          )}
         </div>
       </form>
+
+      <div id="google-button" className="w-full flex justify-center mt-4" />
     </div>
   );
 }
