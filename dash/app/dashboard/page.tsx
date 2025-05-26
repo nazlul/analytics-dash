@@ -54,7 +54,7 @@ export default function Page() {
   });
 
   return (
-    <div className="w-full min-h-screen p-4 relative">
+    <div className="w-full min-h-screen bg-[#35204D] p-4 relative">
       <MainNav />
 
       <div className="grid lg:grid-cols-3 md:grid-cols-2 sm:grid-cols-1 gap-4 mb-6">
@@ -70,7 +70,7 @@ export default function Page() {
           { label: "Average CPC", value: "₹1.5" },
           { label: "CTR", value: "2.6%" }
         ].map((item, index) => (
-          <div key={index} className="bg-white border rounded-xl p-4 shadow-sm flex flex-col justify-between h-24">
+          <div key={index} className="bg-[#FDF5E6] border rounded-xl p-4 shadow-sm flex flex-col justify-between h-24">
             <div className="relative w-max">
               <span className="text-xs text-muted-foreground font-medium">{item.label}</span>
             </div>

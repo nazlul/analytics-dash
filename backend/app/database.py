@@ -4,7 +4,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-load_dotenv(dotenv_path="C:/Users/bbiig/Github/testdash3/backend/.env.local")
+load_dotenv(dotenv_path="C:/Users/bbiig/Github/Ads-Dash/backend/.env.local")
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 if not DATABASE_URL:

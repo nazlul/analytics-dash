@@ -25,13 +25,13 @@ const chartData = [
 const chartConfig = {
   clicks: {
     label: "clicks",
-    color: "#87CEEB",
+    color: "#35204D",
   },
 } satisfies ChartConfig
 
 export function LineChart() {
   return (
-    <Card className="w-full h-full flex flex-col">
+    <Card className="w-full h-full bg-[#FFF5EE] flex flex-col">
       <CardHeader>
         <CardTitle>Clicks</CardTitle>
       </CardHeader>

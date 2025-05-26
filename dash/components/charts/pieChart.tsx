@@ -18,13 +18,13 @@ import {
 } from "@/components/ui/chart"
 
 const chartData = [
-  { browser: "instagram", visitors: 275, fill: "#FF4500" },
-  { browser: "facebook", visitors: 200, fill: "#00008B" },
-  { browser: "others", visitors: 19, fill: "#AFEEEE" },
+  { browser: "instagram", visitors: 275, fill: "#ff7a00" },
+  { browser: "facebook", visitors: 200, fill: "#1877F2" },
+  { browser: "others", visitors: 19, fill: "#35204D" },
 ]
 
 const chartConfig = {
-  visitors: { label: "Clicks" },
+  visitors: { label: "Clicks"},
   chrome: { label: "instagram", color: "hsl(var(--chart-1))" },
   safari: { label: "facebook", color: "hsl(var(--chart-2))" },
   other: { label: "Other", color: "hsl(var(--chart-3))" },
@@ -36,7 +36,7 @@ export function PieC() {
   }, [])
 
   return (
-    <Card className="w-full h-full flex flex-col">
+    <Card className="w-full h-full bg-[#FFF5EE] flex flex-col">
       <CardHeader className="items-center pb-2">
         <CardTitle className="text-base">Publisher Platforms</CardTitle>
         <CardDescription>January - February 2024</CardDescription>

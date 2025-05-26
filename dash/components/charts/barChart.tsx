@@ -34,13 +34,13 @@ const chartData = [
 const chartConfig = {
   clicks: {
     label: "clicks",
-    color: "#0E0E6",
+    color: "#35204D",
   }
 } satisfies ChartConfig
 
 export function BarC() {
   return (
-    <Card className="w-full h-full flex flex-col">
+    <Card className="w-full h-full bg-[#FFF5EE] flex flex-col">
       <CardHeader className="pb-2">
         <CardTitle className="text-base">Clicks</CardTitle>
       </CardHeader>
@@ -71,14 +71,14 @@ export function BarC() {
               <Bar
                 dataKey="clicks"
                 layout="vertical"
-                fill="#87CEEB"
+                fill="#35204D"
                 radius={4}
               >
                 <LabelList
                   dataKey="event"
                   position="insideLeft"
                   offset={8}
-                  className="fill-black font-bold"
+                  className="fill-white font-bold"
                   fontSize={12}
                 />
                 <LabelList
