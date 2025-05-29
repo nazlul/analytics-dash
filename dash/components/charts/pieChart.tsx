@@ -20,7 +20,7 @@ import {
 const chartData = [
   { browser: "instagram", visitors: 275, fill: "#ff7a00" },
   { browser: "facebook", visitors: 200, fill: "#1877F2" },
-  { browser: "others", visitors: 19, fill: "#35204D" },
+  { browser: "others", visitors: 19, fill: "#439B82" },
 ]
 
 const chartConfig = {

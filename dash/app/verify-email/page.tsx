@@ -19,7 +19,7 @@ export default function VerifyEmailPage() {
 
     const verify = async () => {
       try {
-        const res = await fetch(`http://localhost:8000/api/verify-email?token=${token}`);
+        const res = await fetch(`http://localhost:8000/auth/verify-email?token=${token}`);
         const data = await res.json();
 
         if (res.ok) {

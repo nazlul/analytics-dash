@@ -14,8 +14,10 @@ from app.auth import utils
 from app import config
 from fastapi.responses import JSONResponse
 
+from app.dependencies import get_current_user
+
 router = APIRouter()
-load_dotenv()
+load_dotenv(dotenv_path="C:/Users/bbiig/Github/Ads-Dash/backend/.env.local")
 SECRET = os.getenv("JWT_SECRET")
 
 class RegisterRequest(BaseModel):
@@ -96,18 +98,19 @@ def login(data: LoginRequest, db: Session = Depends(get_db)):
 
     response = JSONResponse(content={
         "message": "Login successful",
-        "redirect_url": "/dashboard"
+        "redirect_url": "/dashboard",
+        "access_token": access_token
     })
 
     response.set_cookie(
         key="refresh_token",
         value=refresh_token,
         httponly=True,
-        secure=True,
-        samesite="strict",
+        secure=False,  # Set to True in production
+        samesite="Lax",
         max_age=60 * 60 * 24 * 90
     )
-    return {"access_token": access_token, "redirect_url": "/dashboard"}
+    return response  
 
 @router.post("/google-login")
 async def google_login(data: GoogleLoginRequest, db: Session = Depends(get_db)):
@@ -153,24 +156,60 @@ def refresh_token(request: Request):
     new_access_token = utils.create_access_token(email)
     return {"access_token": new_access_token}
 
-@router.get("/api/protected")
+@router.get("/protected")
 def get_facebook_ad_data(current_user: User = Depends(utils.get_current_user)):
-    fb_access_token = "facebook_access_token"
-    ad_account_id = "1234567890"
+    fb_access_token = "facebook_access_token"  
+    ad_account_id = "1234567890"               
     url = f"https://graph.facebook.com/v19.0/{ad_account_id}/insights"
     params = {
         "access_token": fb_access_token,
         "fields": "campaign_name,clicks,impressions,cpc,ctr",
         "date_preset": "last_30d"
     }
-    res = requests.get(url, params=params)
-    data = res.json()
-    return {"dashboard": data["data"]}
+
+    try:
+        res = requests.get(url, params=params)
+        data = res.json()
+
+        if "data" in data:
+            return {"dashboard": data["data"]}
+        else:
+            raise ValueError("Invalid response from Facebook API")
+
+    except Exception:
+        return {
+            "dashboard": [
+                {
+                    "campaign_name": "Mock Campaign 1",
+                    "clicks": 120,
+                    "impressions": 1000,
+                    "cpc": 0.50,
+                    "ctr": 12.0
+                },
+                {
+                    "campaign_name": "Mock Campaign 2",
+                    "clicks": 80,
+                    "impressions": 800,
+                    "cpc": 0.65,
+                    "ctr": 10.0
+                }
+            ]
+        }
+
 
 @router.post("/logout")
 def logout(response: Response):
     response.delete_cookie("refresh_token")
     return {"message": "Logged out"}
+
+@router.get("/me")
+def get_me(user: User = Depends(utils.get_current_user)):
+    return user
+
+@router.get("/dashboard")
+def protected_route(email: str = Depends(get_current_user)):
+    return {"message": f"Welcome user {email}"}
+
 
 @router.delete("/delete-user")
 def delete_user(email: str = Query(...), db: Session = Depends(get_db)):

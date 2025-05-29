@@ -65,7 +65,7 @@ export function UserAuthForm({ className, type, ...props }: UserAuthFormProps) {
     setErrors({});
 
     try {
-    const res = await fetch(`http://localhost:8000/api/${type === "signin" ? "login" : "register"}`, {
+    const res = await fetch(`http://localhost:8000/auth/${type === "signin" ? "login" : "register"}`, {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
@@ -106,7 +106,7 @@ export function UserAuthForm({ className, type, ...props }: UserAuthFormProps) {
             setIsLoading(true);
             const googleToken = credentialResponse.credential;
 
-            const res = await fetch("http://localhost:8000/api/google-login", {
+            const res = await fetch("http://localhost:8000/auth/google-login", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ token: googleToken }),

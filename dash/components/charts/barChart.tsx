@@ -71,21 +71,21 @@ export function BarC() {
               <Bar
                 dataKey="clicks"
                 layout="vertical"
-                fill="#35204D"
+                fill="#439B82"
                 radius={4}
               >
                 <LabelList
                   dataKey="event"
                   position="insideLeft"
                   offset={8}
-                  className="fill-white font-bold"
+                  className="fill-[#35204D] font-bold"
                   fontSize={12}
                 />
                 <LabelList
                   dataKey="clicks"
                   position="right"
                   offset={8}
-                  className="fill-black font-bold"
+                  className="fill-[#35204D] font-bold"
                   fontSize={12}
                 />
               </Bar>

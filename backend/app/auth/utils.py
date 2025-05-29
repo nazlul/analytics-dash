@@ -7,16 +7,17 @@ from typing import Optional
 from jose import jwt, JWTError
 import httpx
 from email.message import EmailMessage
-from fastapi import Request, HTTPException, Depends
+from fastapi import Request, HTTPException, Depends, status
 from fastapi.security import OAuth2PasswordBearer
 from app.auth.schemas import User
-
-load_dotenv()
+from app.config import JWT_SECRET
+    
+load_dotenv(dotenv_path="C:/Users/bbiig/Github/Ads-Dash/backend/.env.local")
 SECRET = os.getenv("JWT_SECRET")
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
 VERIFICATION_EXPIRY_HOURS = 1
 FRONTEND_URL = os.getenv("FRONTEND_URL")
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token") 
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login") 
 
 def hash_password(password: str) -> str:
     return bcrypt.hash(password)
@@ -66,13 +67,17 @@ async def get_google_user_info(token: str):
             return None
         return data
 
-async def get_current_user(request: Request, token: str = Depends(oauth2_scheme)) -> User:
-    cookie_token = request.cookies.get("access_token")
-    token_to_use = cookie_token or token
-    if not token_to_use:
-        raise HTTPException(status_code=401, detail="Missing token")
-
-    payload = decode_token(token_to_use)
-    if not payload or "email" not in payload:
-        raise HTTPException(status_code=401, detail="Invalid or expired token")
-    return User(email=payload["email"])
+def get_current_user(token: str = Depends(oauth2_scheme)):
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
+        email = payload.get("email")
+        if email is None:
+            raise credentials_exception
+        return email 
+    except JWTError:
+        raise credentials_exception

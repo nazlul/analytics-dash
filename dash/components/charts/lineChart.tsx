@@ -25,7 +25,7 @@ const chartData = [
 const chartConfig = {
   clicks: {
     label: "clicks",
-    color: "#35204D",
+    color: "#439B82",
   },
 } satisfies ChartConfig
 

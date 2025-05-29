@@ -7,7 +7,7 @@ interface GoogleAuthButtonProps {
   isLoading?: boolean;
 }
 
-export function GoogleAuthButton({ isLoading }: GoogleAuthButtonProps) {
+export function   GoogleAuthButton({ isLoading }: GoogleAuthButtonProps) {
   const divRef = useRef<HTMLDivElement | null>(null);
   const [ready, setReady] = useState(false);
 
@@ -22,7 +22,7 @@ export function GoogleAuthButton({ isLoading }: GoogleAuthButtonProps) {
         client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!,
         callback: async (response) => {
           const token = response.credential;
-          const res = await fetch("http://localhost:8000/api/google-login", {
+          const res = await fetch("http://localhost:8000/auth/google-login", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ token }),
