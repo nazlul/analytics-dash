@@ -215,7 +215,9 @@ export function UserAuthForm({ className, type, ...props }: UserAuthFormProps) {
             </div>
           )}
           {errors.checkbox && <p className="text-red-500 text-sm">{errors.checkbox}</p>}
-
+          {errors.general && (
+            <p className="text-red-500 text-sm text-center mt-2">{errors.general}</p>
+          )}
           <Button type="submit" className="w-full mt-2" disabled={isLoading}>
             {isLoading && <Icons.spinner className="mr-2 h-4 animate-spin" />}
             {type === "signin" ? "Sign In" : "Sign Up"}

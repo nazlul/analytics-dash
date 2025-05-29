@@ -33,12 +33,19 @@ const MainNav: React.FC = () => {
       try {
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/me`, {
           headers: {
-          Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${token}`,
           },
         });
         if (res.ok) {
           const data = await res.json();
+          console.log("Fetched user:", data);
+          if (typeof data === "string") {
           setUser({ email: data });
+          } else if (data?.email) {
+            setUser({ email: data.email });
+          } else {
+            console.error("User email not found in response:", data);
+          }
         } else {
           console.error("Failed to fetch user");
         }
@@ -63,6 +70,8 @@ const MainNav: React.FC = () => {
     };
   }, []);
 
+  const isAdmin = !!user?.email && user.email.endsWith("@example.com");
+
   return (
     <nav className="w-full flex justify-between items-center px-6 bg-[#FFF5EE] text-blue-900 rounded-lg mb-4 relative">
       <div className="flex items-center">
@@ -71,10 +80,18 @@ const MainNav: React.FC = () => {
       </div>
 
       <div className="relative flex items-center gap-3" ref={logoutRef}>
-        {user && (
+        {user?.email && (
           <span className="text-sm text-gray-700 font-medium">
             USER: {user.email}
           </span>
+        )}
+        {isAdmin && (
+          <button
+            className="text-sm text-white bg-[#439B82] cursor-pointer font-semibold px-2 py-2 rounded"
+            onClick={() => window.location.href = "/admin"}
+          >
+            Admin Panel
+          </button>
         )}
         <button onClick={() => setShowLogout(prev => !prev)} className="p-2 flex items-center">
           <img src="/assets/logout.svg" alt="Logout" className="h-20 w-20 cursor-pointer mt-3" />
