@@ -8,3 +8,4 @@ class User(Base):
     hashed_password = Column(String)
     is_google = Column(Boolean, default=False)
     is_verified = Column(Boolean, default=False)
+    name = Column(String, nullable=True)

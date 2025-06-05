@@ -1,48 +1,32 @@
-'use client';
-
-import { useEffect, useState } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+"use client";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect } from "react";
 
 export default function VerifyEmailPage() {
-  const searchParams = useSearchParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const token = searchParams.get("token");
 
-  const [message, setMessage] = useState("Verifying...");
-  const [error, setError] = useState("");
-
   useEffect(() => {
-    if (!token) {
-      setError("No token provided.");
-      return;
+    async function verifyEmail() {
+      if (!token) return;
+
+      const res = await fetch(`http://localhost:8000/auth/verify-email?token=${token}`, {
+        method: "GET",
+        credentials: "include",
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        localStorage.setItem("access_token", data.access_token);
+        router.push(data.redirect_url || "/dashboard");
+      } else {
+        router.push("/error?reason=email_verification_failed");
+      }
     }
 
-    const verify = async () => {
-      try {
-        const res = await fetch(`http://localhost:8000/auth/verify-email?token=${token}`);
-        const data = await res.json();
+    verifyEmail();
+  }, [token, router]);
 
-        if (res.ok) {
-          setMessage(data.message || "Email verified successfully!");
-          setTimeout(() => {
-            router.push(data.redirect_url || "/login");
-          }, 3000);
-        } else {
-          setError(data.detail || "Verification failed");
-        }
-      } catch (e) {
-        setError("An error occurred while verifying.");
-      }
-    };
-
-    verify();
-  }, [token]);
-
-  return (
-    <div className="flex flex-col items-center justify-center min-h-screen px-4">
-      <h1 className="text-xl font-bold">
-        {error ? "❌ " + error : "✅ " + message}
-      </h1>
-    </div>
-  );
+  return <p>Verifying email...</p>;
 }

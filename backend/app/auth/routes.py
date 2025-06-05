@@ -1,6 +1,6 @@
 from datetime import timedelta
 import os
-import requests 
+import requests
 from dotenv import load_dotenv
 from fastapi import APIRouter, Depends, HTTPException, status, Request, Response, Cookie, Query
 from fastapi.responses import JSONResponse
@@ -8,12 +8,10 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel, Field
 from typing import Optional
 from jose import JWTError, jwt
-from app.database import get_db 
-from app.models import delete_user_by_email, get_user_by_email, create_user
+from app.database import get_db
+from app.models import delete_user_by_email, get_user_by_email, create_user, User as DBUser
 from app.auth import utils
 from app import config
-from fastapi.responses import JSONResponse
-
 from app.dependencies import get_current_user
 
 router = APIRouter()
@@ -27,6 +25,7 @@ class RegisterRequest(BaseModel):
 
 class User(BaseModel):
     email: str
+    name: Optional[str] = None
 
 class ResendEmailRequest(BaseModel):
     email: str
@@ -44,14 +43,11 @@ def register(data: RegisterRequest, db: Session = Depends(get_db)):
     user = get_user_by_email(db, data.email)
     if user:
         raise HTTPException(status_code=400, detail="Email already registered")
-
     hashed_pw = utils.hash_password(data.password)
-    create_user(db, email=data.email, password=hashed_pw, is_google=False)
-
+    create_user(db, email=data.email, password=hashed_pw, is_google=False, name=data.name)
     token = utils.create_email_verification_token(data.email)
-    verify_link = f"http://localhost:3000/verify-email?token={token}"  
+    verify_link = f"http://localhost:3000/verify-email?token={token}"
     utils.send_verification_email(data.email, token)
-
     return {
         "message": "Registration successful. Please check your email to verify.",
         "verify_link": verify_link,
@@ -67,7 +63,23 @@ def verify_email(token: str, db: Session = Depends(get_db)):
             raise HTTPException(status_code=404, detail="User not found")
         user.is_verified = True
         db.commit()
-        return {"message": "Email verified successfully", "redirect_url": "/dashboard"}
+        access_token = utils.create_access_token(user.email)
+        refresh_token = utils.create_refresh_token(user.email, remember_me=True)
+        response = JSONResponse(content={
+            "message": "Email verified successfully",
+            "redirect_url": "/dashboard",
+            "access_token": access_token
+        })
+        response.set_cookie(
+            key="refresh_token",
+            value=refresh_token,
+            httponly=True,
+            secure=False,
+            samesite="Lax",
+            max_age=60 * 60 * 24 * 30,
+            path="/"
+        )
+        return response
     except JWTError:
         raise HTTPException(status_code=400, detail="Invalid or expired token")
 
@@ -78,7 +90,6 @@ def resend_verification_email(req: ResendEmailRequest, db: Session = Depends(get
         raise HTTPException(status_code=404, detail="User not found")
     if user.is_verified:
         raise HTTPException(status_code=400, detail="Email is already verified")
-
     token = utils.create_email_verification_token(req.email)
     utils.send_verification_email(req.email, token)
     return {"message": "Verification email resent"}
@@ -92,56 +103,50 @@ def login(data: LoginRequest, db: Session = Depends(get_db)):
         raise HTTPException(status_code=403, detail="Please verify your email to continue")
     if not utils.verify_password(data.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid password")
-
     access_token = utils.create_access_token(data.email)
     refresh_token = utils.create_refresh_token(data.email, remember_me=data.remember_me)
-
     response = JSONResponse(content={
         "message": "Login successful",
         "redirect_url": "/dashboard",
         "access_token": access_token
     })
-
     response.set_cookie(
         key="refresh_token",
         value=refresh_token,
         httponly=True,
-        secure=False,  # Set to True in production
+        secure=False,
         samesite="Lax",
-        max_age=60 * 60 * 24 * 90
+        max_age=60 * 60 * 24 * 90,
+        path="/"
     )
-    return response  
+    return response
 
 @router.post("/google-login")
 async def google_login(data: GoogleLoginRequest, db: Session = Depends(get_db)):
     info = await utils.get_google_user_info(data.token)
     if not info:
         raise HTTPException(status_code=401, detail="Invalid Google token")
-
     email = info["email"]
     user = get_user_by_email(db, email)
     if not user:
-        create_user(db, email=email, password=None, is_google=True)
-
-    access_token = utils.create_access_token(email)  
+        create_user(db, email=email, password=None, is_google=True, name=info.get("name"))
+    access_token = utils.create_access_token(email)
     refresh_token = utils.create_refresh_token(email, remember_me=True)
-
     response = JSONResponse(content={
         "access_token": access_token,
         "message": "Login successful",
         "redirect_url": "/dashboard"
     })
-
     response.set_cookie(
         key="refresh_token",
         value=refresh_token,
         httponly=True,
-        secure=True,
-        samesite="strict",
-        max_age=60 * 60 * 24 * 30  
+        secure=False,
+        samesite="Lax",
+        max_age=60 * 60 * 24 * 30,
+        path="/"
     )
     return response
-
 
 @router.post("/refresh-token")
 def refresh_token(request: Request):
@@ -156,26 +161,65 @@ def refresh_token(request: Request):
     new_access_token = utils.create_access_token(email)
     return {"access_token": new_access_token}
 
+@router.post("/logout")
+def logout(response: Response):
+    response.delete_cookie(
+        key="refresh_token",
+        httponly=True,
+        secure=False,
+        samesite="Lax",
+        path="/"
+    )
+    return {"message": "Logged out"}
+
+@router.get("/me")
+def get_me(user: DBUser = Depends(utils.get_current_user)):
+    return {"email": user.email, "name": user.name}
+
+@router.get("/all-users")
+def get_all_users(db: Session = Depends(get_db)):
+    users = db.query(DBUser).all()
+    return {"users": [{"email": u.email, "name": u.name} for u in users]}
+
+@router.get("/dashboard")
+def protected_route(email: str = Depends(get_current_user)):
+    return {"message": f"Welcome user {email}"}
+
+@router.delete("/delete-user")
+def delete_user(
+    email: str = Query(...),
+    db: Session = Depends(get_db),
+    response: Response = None
+):
+    success = delete_user_by_email(db, email)
+    if not success:
+        raise HTTPException(status_code=404, detail="User not found")
+    response.delete_cookie(
+        key="refresh_token",
+        httponly=True,
+        secure=False,
+        samesite="Lax",
+        path="/"
+    )
+    return {"message": f"User {email} deleted and refresh token removed"}
+
 @router.get("/protected")
-def get_facebook_ad_data(current_user: User = Depends(utils.get_current_user)):
-    fb_access_token = "facebook_access_token"  
-    ad_account_id = "1234567890"               
+def get_facebook_ad_data(current_user: DBUser = Depends(utils.get_current_user)):
+    fb_access_token = "facebook_access_token"
+    ad_account_id = "1234567890"
     url = f"https://graph.facebook.com/v19.0/{ad_account_id}/insights"
     params = {
         "access_token": fb_access_token,
         "fields": "campaign_name,clicks,impressions,cpc,ctr",
         "date_preset": "last_30d"
     }
-
     try:
         res = requests.get(url, params=params)
         data = res.json()
-
         if "data" in data:
             return {"dashboard": data["data"]}
         else:
             raise ValueError("Invalid response from Facebook API")
-
     except Exception:
         return {
             "dashboard": [
@@ -195,25 +239,3 @@ def get_facebook_ad_data(current_user: User = Depends(utils.get_current_user)):
                 }
             ]
         }
-
-
-@router.post("/logout")
-def logout(response: Response):
-    response.delete_cookie("refresh_token")
-    return {"message": "Logged out"}
-
-@router.get("/me")
-def get_me(user: User = Depends(utils.get_current_user)):
-    return user
-
-@router.get("/dashboard")
-def protected_route(email: str = Depends(get_current_user)):
-    return {"message": f"Welcome user {email}"}
-
-
-@router.delete("/delete-user")
-def delete_user(email: str = Query(...), db: Session = Depends(get_db)):
-    success = delete_user_by_email(db, email)
-    if not success:
-        raise HTTPException(status_code=404, detail="User not found")
-    return {"message": f"User {email} deleted successfully"}

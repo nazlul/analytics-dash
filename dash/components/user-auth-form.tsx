@@ -65,37 +65,37 @@ export function UserAuthForm({ className, type, ...props }: UserAuthFormProps) {
     setErrors({});
 
     try {
-    const res = await fetch(`http://localhost:8000/auth/${type === "signin" ? "login" : "register"}`, {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ 
-        email, 
-        password,
-        ...(type === "signin" && { remember_me: rememberMe }),
-      }),
-    });
+      const res = await fetch(`http://localhost:8000/auth/${type === "signin" ? "login" : "register"}`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          email, 
+          password,
+          ...(type === "signin" && { remember_me: rememberMe }),
+        }),
+      });
 
-    const data = await res.json();
+      const data = await res.json();
 
-    if (!res.ok) {
-      setErrors({ general: data.detail || "Something went wrong" });
-      return;
+      if (!res.ok) {
+        setErrors({ general: data.detail || "Something went wrong" });
+        return;
+      }
+
+      if (data.access_token) {
+        localStorage.setItem("access_token", data.access_token);
+        window.location.href = data.redirect_url || "/dashboard";
+      } else {
+        setErrors({ general: "No token returned" });
+      }
+
+    } catch {
+      setErrors({ general: "Network error" });
+    } finally {
+      setIsLoading(false);
     }
-
-    if (data.access_token) {
-      localStorage.setItem("access_token", data.access_token);
-      window.location.href = data.redirect_url || "/dashboard";
-    } else {
-      setErrors({ general: "No token returned" });
-    }
-
-  } catch (error) {
-    setErrors({ general: "Network error" });
-  } finally {
-    setIsLoading(false);
   }
-}
 
   React.useEffect(() => {
     const initializeGoogle = () => {
@@ -110,11 +110,11 @@ export function UserAuthForm({ className, type, ...props }: UserAuthFormProps) {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ token: googleToken }),
+              credentials: "include"
             });
 
             const data = await res.json();
             if (res.ok) {
-              alert("Google login successful!");
               window.location.href = "/dashboard";
             } else {
               alert(data.error || "Google login failed");
@@ -188,7 +188,7 @@ export function UserAuthForm({ className, type, ...props }: UserAuthFormProps) {
               <li className={passwordValid.hasSpecialChar ? "text-green-600" : "text-gray-500"}>• At least one special character</li>
             </ul>
           )}
-          
+
           {type === "signin" && (
             <div className="flex items-center space-x-2">
               <input

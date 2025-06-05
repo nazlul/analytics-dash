@@ -11,13 +11,13 @@ from fastapi import Request, HTTPException, Depends, status
 from fastapi.security import OAuth2PasswordBearer
 from app.auth.schemas import User
 from app.config import JWT_SECRET
-    
+
 load_dotenv(dotenv_path="C:/Users/bbiig/Github/Ads-Dash/backend/.env.local")
 SECRET = os.getenv("JWT_SECRET")
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
 VERIFICATION_EXPIRY_HOURS = 1
 FRONTEND_URL = os.getenv("FRONTEND_URL")
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login") 
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 def hash_password(password: str) -> str:
     return bcrypt.hash(password)
@@ -47,7 +47,7 @@ def create_access_token(email: str) -> str:
 
 def create_refresh_token(email: str, remember_me: bool = False) -> str:
     if remember_me:
-        return create_token({"email": email}, timedelta(days=90)) 
+        return create_token({"email": email}, timedelta(days=90))
     return create_token({"email": email}, timedelta(days=30))
 
 def decode_token(token: str) -> Optional[dict]:
@@ -78,6 +78,6 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
         email = payload.get("email")
         if email is None:
             raise credentials_exception
-        return email 
+        return email
     except JWTError:
         raise credentials_exception

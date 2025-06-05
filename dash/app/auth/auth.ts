@@ -4,6 +4,7 @@ export async function fetchProtectedData(): Promise<any> {
 
   let res = await fetch("http://localhost:8000/auth/protected", {
     method: "GET",
+    credentials: "include",
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },
@@ -22,6 +23,7 @@ export async function fetchProtectedData(): Promise<any> {
 
     res = await fetch("http://localhost:8000/auth/protected", {
       method: "GET",
+      credentials: "include",
       headers: {
         Authorization: `Bearer ${accessToken}`,
       },
