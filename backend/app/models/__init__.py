@@ -4,8 +4,8 @@ from sqlalchemy.orm import Session
 
 print(Base, SessionLocal)
 
-def create_user(db: Session, email: str, password: str = None, is_google: bool = False):
-    db_user = User(email=email, hashed_password=password, is_google=is_google)
+def create_user(db: Session, email: str, password: str = None, is_google: bool = False, name: str = None):
+    db_user = User(email=email, hashed_password=password, is_google=is_google, name=name)
     db.add(db_user)
     db.commit()
     db.refresh(db_user)

@@ -11,8 +11,8 @@ from jose import JWTError, jwt
 from app.database import get_db
 from app.models import delete_user_by_email, get_user_by_email, create_user, User as DBUser
 from app.auth import utils
-from app import config
-from app.dependencies import get_current_user
+from app.config import JWT_SECRET
+from app.auth.utils import get_current_user
 
 router = APIRouter()
 load_dotenv(dotenv_path="C:/Users/bbiig/Github/Ads-Dash/backend/.env.local")
@@ -57,7 +57,7 @@ def register(data: RegisterRequest, db: Session = Depends(get_db)):
 @router.get("/verify-email")
 def verify_email(token: str, db: Session = Depends(get_db)):
     try:
-        payload = jwt.decode(token, SECRET, algorithms=["HS256"])
+        payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
         user = get_user_by_email(db, payload["email"])
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
@@ -173,7 +173,7 @@ def logout(response: Response):
     return {"message": "Logged out"}
 
 @router.get("/me")
-def get_me(user: DBUser = Depends(utils.get_current_user)):
+def get_me(user: DBUser = Depends(get_current_user)):
     return {"email": user.email, "name": user.name}
 
 @router.get("/all-users")

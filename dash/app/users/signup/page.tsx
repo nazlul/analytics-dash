@@ -101,15 +101,15 @@ export default function SignupPage() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <Label htmlFor="name">Name</Label>
-            <Input id="name" name="name" value={form.name} onChange={handleChange} required />
+            <Input id="name" name="name" className="mt-1" value={form.name} onChange={handleChange} required />
           </div>
           <div>
             <Label htmlFor="email">Email</Label>
-            <Input id="email" name="email" type="email" value={form.email} onChange={handleChange} required />
+            <Input id="email" name="email" type="email" className="mt-1" value={form.email} onChange={handleChange} required />
           </div>
           <div className="relative">
             <Label htmlFor="password">Password</Label>
-            <Input id="password" name="password" type={showPassword ? "text" : "password"} value={form.password} onChange={handleChange} required />
+            <Input id="password" name="password" className="mt-1" type={showPassword ? "text" : "password"} value={form.password} onChange={handleChange} required />
             <button type="button" className="absolute right-2 top-7 text-gray-500" onClick={() => setShowPassword((prev) => !prev)}>
               {showPassword ? <Eye size={16} /> : <EyeOff size={16} />}
             </button>
@@ -123,7 +123,7 @@ export default function SignupPage() {
           </div>
           <div className="relative">
             <Label htmlFor="confirmPassword">Confirm Password</Label>
-            <Input id="confirmPassword" name="confirmPassword" type={showConfirmPassword ? "text" : "password"} value={form.confirmPassword} onChange={handleChange} required />
+            <Input id="confirmPassword" name="confirmPassword" className="mt-1" type={showConfirmPassword ? "text" : "password"} value={form.confirmPassword} onChange={handleChange} required />
             <button type="button" className="absolute right-2 top-7 text-gray-500" onClick={() => setShowConfirmPassword((prev) => !prev)}>
               {showConfirmPassword ? <Eye size={16} /> : <EyeOff size={16} />}
             </button>

@@ -20,11 +20,8 @@ export default function Page() {
 
     const checkAuth = async () => {
       try {
-        console.log("Checking authentication...");
-        const data = await fetchProtectedData();
-        console.log("Protected data fetched successfully:", data);
-      } catch (err) {
-        console.error("Authentication failed:", err);
+        await fetchProtectedData();
+      } catch {
         router.replace("/users/signin");
       }
     };
@@ -33,15 +30,23 @@ export default function Page() {
   }, [router]);
 
   return (
-    <div className="w-full min-h-screen bg-[#35204D] p-4 relative">
+    <div className="min-h-screen bg-[#35204D] text-[#35204D] overflow-x-hidden">
       <MainNav />
-      <div className="grid lg:grid-cols-3 md:grid-cols-2 sm:grid-cols-1 gap-4 mb-6">
-        <div className="min-h-[300px]"><LineChart /></div>
-        <div className="min-h-[300px]"><BarC /></div>
-        <div className="min-h-[300px]"><PieC /></div>
-      </div>
-      <CampaignStats />
-      <CampaignTable />
+      <main className="mx-4 sm:mx-4 md:mx-6 lg:mx-8 xl:mx-12 py-6">
+        <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="flex w-full"><LineChart /></div>
+          <div className="flex w-full"><BarC /></div>
+          <div className="flex w-full"><PieC /></div>
+        </section>
+
+        <section className="mt-8">
+          <CampaignStats />
+        </section>
+
+        <section className="mt-6">
+          <CampaignTable />
+        </section>
+      </main>
     </div>
   );
 }

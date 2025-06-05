@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 
 interface User {
   email: string;
+  name?: string;
 }
 
 const MainNav: React.FC = () => {
@@ -14,41 +15,41 @@ const MainNav: React.FC = () => {
   const router = useRouter();
 
   const handleLogout = async () => {
-    try {
-      localStorage.removeItem("access_token");
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/logout`, {
-        method: "POST",
-        credentials: "include",
-      });
-      if (res.ok) {
-        router.push("/users/signin"); 
-      } else {
-        console.error("Logout failed");
-      }
-    } catch (error) {
-      console.error("Logout error:", error);
-    }
+    localStorage.removeItem("access_token");
+    await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/logout`, {
+      method: "POST",
+      credentials: "include",
+    });
+    router.push("/users/signin");
   };
 
   useEffect(() => {
     const token = localStorage.getItem("access_token");
+    if (!token) return;
+
     const fetchUser = async () => {
-      try {
-        if (!token) return;
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/me`, {
-          method: "GET",
-          headers: { Authorization: `Bearer ${token}` },
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setUser(data);
+      } else {
+        const refresh = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/refresh-token`, {
+          method: "POST",
           credentials: "include",
         });
-        if (res.ok) {
-          const data = await res.json();
-          if (typeof data === "string") setUser({ email: data });
-          else if (data?.email) setUser({ email: data.email });
-        } else {
-          console.error("Failed to fetch user info");
+        if (refresh.ok) {
+          const { access_token } = await refresh.json();
+          localStorage.setItem("access_token", access_token);
+          const retry = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/me`, {
+            headers: { Authorization: `Bearer ${access_token}` },
+          });
+          if (retry.ok) {
+            const data = await retry.json();
+            setUser(data);
+          }
         }
-      } catch (error) {
-        console.error("Error fetching user info:", error);
       }
     };
     fetchUser();
@@ -61,40 +62,56 @@ const MainNav: React.FC = () => {
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const isAdmin = !!user?.email && user.email.endsWith("@example.com");
 
   return (
-    <nav className="w-full flex justify-between items-center px-6 bg-[#FFF5EE] text-blue-900 rounded-lg mb-4 relative">
-      <div className="flex items-center">
-        <img src="/assets/dotheal-logo.png" alt="Logo" className="h-10 mr-3" />
-        <h1 className="text-xl font-semibold text-[#439B82]">Ads Analytics</h1>
-      </div>
-      <div className="relative flex items-center gap-3" ref={logoutRef}>
-        {user?.email && <span className="text-sm text-gray-700 font-medium">USER: {user.email}</span>}
-        {isAdmin && (
-          <button
-            className="text-sm text-white bg-[#439B82] cursor-pointer font-semibold px-2 py-2 rounded"
-            onClick={() => router.push("/admin")}
-          >
-            Admin Panel
-          </button>
-        )}
-        <button onClick={() => setShowLogout((prev) => !prev)} className="p-2 flex items-center">
-          <img src="/assets/logout.svg" alt="Logout" className="h-16 w-16 cursor-pointer" />
-        </button>
-        {showLogout && (
-          <div
-            className="absolute right-0 top-14 bg-red-600 text-white text-sm px-4 py-2 rounded shadow-lg cursor-pointer hover:bg-red-700 transition"
-            onClick={handleLogout}
-          >
-            Logout
-          </div>
-        )}
+    <nav className="w-full bg-[#FFF5EE] text-blue-900 rounded-lg mb-4 px-4 lg:px-10 py-3">
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+        <div className="flex items-center justify-center sm:justify-start">
+          <img src="/assets/dotheal-logo.png" alt="Logo" className="h-10 mr-3" />
+          <h1 className="text-xl font-semibold text-[#439B82]">Ads Analytics</h1>
+        </div>
+        <div
+          className="relative flex flex-col sm:flex-row sm:items-center items-center gap-2 sm:gap-3"
+          ref={logoutRef}
+        >
+
+          {isAdmin && (
+            <button
+              className="text-sm text-white bg-[#439B82] px-3 py-1.5 rounded cursor-pointer"
+              onClick={() => router.push("/admin")}
+            >
+              Admin Panel
+            </button>
+          )}
+
+          {user && (
+            <div className="flex items-center gap-2 sm:gap-3 text-sm text-gray-700 font-medium">
+              <span className="text-center sm:text-left break-all">
+                USER: {user.name || user.email}
+              </span>
+              <button onClick={() => setShowLogout((prev) => !prev)} className="sm:ml-2 mt-2">
+                <img
+                  src="/assets/logout.svg"
+                  alt="Logout"
+                  className="h-16 w-16 cursor-pointer"
+                />
+              </button>
+            </div>
+          )}
+
+          {showLogout && (
+            <div
+              className="absolute right-0 top-full -mt-1 bg-red-600 text-white text-sm px-4 py-2 rounded shadow-lg cursor-pointer hover:bg-red-700 transition"
+              onClick={handleLogout}
+            >
+              Logout
+            </div>
+          )}
+        </div>
       </div>
     </nav>
   );

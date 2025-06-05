@@ -1,20 +1,12 @@
 "use client"
 
 import * as React from "react"
-import { Label, Pie, PieChart, ResponsiveContainer } from "recharts"
-
+import { Pie, PieChart, Label, ResponsiveContainer } from "recharts"
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
+  Card, CardContent, CardHeader, CardDescription, CardTitle
 } from "@/components/ui/card"
 import {
-  ChartConfig,
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
+  ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent
 } from "@/components/ui/chart"
 
 const chartData = [
@@ -24,10 +16,10 @@ const chartData = [
 ]
 
 const chartConfig = {
-  visitors: { label: "Clicks"},
-  chrome: { label: "instagram", color: "hsl(var(--chart-1))" },
-  safari: { label: "facebook", color: "hsl(var(--chart-2))" },
-  other: { label: "Other", color: "hsl(var(--chart-3))" },
+  visitors: { label: "Clicks" },
+  instagram: { label: "Instagram" },
+  facebook: { label: "Facebook" },
+  others: { label: "Others" },
 } satisfies ChartConfig
 
 export function PieC() {
@@ -70,14 +62,14 @@ export function PieC() {
                           <tspan
                             x={viewBox.cx}
                             y={viewBox.cy}
-                            className="fill-foreground text-xl font-bold"
+                            className="fill-[#35204D] text-xl font-bold"
                           >
                             {totalVisitors.toLocaleString()}
                           </tspan>
                           <tspan
                             x={viewBox.cx}
                             y={(viewBox.cy || 0) + 18}
-                            className="fill-muted-foreground text-sm"
+                            className="fill-[#777] text-sm"
                           >
                             Clicks
                           </tspan>

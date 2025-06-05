@@ -51,8 +51,8 @@ export default function CampaignTable() {
 
   return (
     <div className="mt-10 relative">
-      <div className="overflow-x-auto">
-        <table className="min-w-full bg-[#FFF5EE] border rounded-xl shadow-sm">
+      <div className="overflow-x-auto rounded-xl">
+        <table className="min-w-full bg-[#FFF5EE] border shadow-sm">
           <thead>
             <tr className="bg-[#FFF5EE] text-left text-sm text-gray-600">
               <th className="px-4 py-3 border-b">Campaign</th>

@@ -11,13 +11,16 @@ from fastapi import Request, HTTPException, Depends, status
 from fastapi.security import OAuth2PasswordBearer
 from app.auth.schemas import User
 from app.config import JWT_SECRET
+from app.models import get_user_by_email
+from app.database import get_db 
+from sqlalchemy.orm import Session
 
 load_dotenv(dotenv_path="C:/Users/bbiig/Github/Ads-Dash/backend/.env.local")
 SECRET = os.getenv("JWT_SECRET")
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
 VERIFICATION_EXPIRY_HOURS = 1
 FRONTEND_URL = os.getenv("FRONTEND_URL")
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
 def hash_password(password: str) -> str:
     return bcrypt.hash(password)
@@ -67,17 +70,20 @@ async def get_google_user_info(token: str):
             return None
         return data
 
-def get_current_user(token: str = Depends(oauth2_scheme)):
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
+def get_current_user(
+    token: str = Depends(oauth2_scheme),
+    db: Session = Depends(get_db)
+):
     try:
         payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
         email = payload.get("email")
-        if email is None:
-            raise credentials_exception
-        return email
+        if not email:
+            raise HTTPException(status_code=401, detail="Invalid token")
+        user = get_user_by_email(db, email)
+        if not user:
+            raise HTTPException(status_code=401, detail="User not found")
+        return user
     except JWTError:
-        raise credentials_exception
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+
