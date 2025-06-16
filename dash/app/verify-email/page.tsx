@@ -2,6 +2,8 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect } from "react";
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+
 export default function VerifyEmailPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -11,7 +13,7 @@ export default function VerifyEmailPage() {
     async function verifyEmail() {
       if (!token) return;
 
-      const res = await fetch(`http://localhost:8000/auth/verify-email?token=${token}`, {
+      const res = await fetch(`${API_BASE_URL}/auth/verify-email?token=${token}`, {
         method: "GET",
         credentials: "include",
       });
