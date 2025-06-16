@@ -33,7 +33,7 @@ export function LineChart() {
         <ChartContainer config={chartConfig} className="w-full h-full">
           <AreaChart
             data={chartData}
-            margin={{ left: 12, right: 12 }}
+            margin={{ left: -15, right: 12 }}
           >
             <CartesianGrid vertical={false} />
             <XAxis

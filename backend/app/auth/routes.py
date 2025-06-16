@@ -12,7 +12,7 @@ from app.database import get_db
 from app.models import delete_user_by_email, get_user_by_email, create_user, User as DBUser
 from app.auth import utils
 from app.config import JWT_SECRET
-from app.auth.utils import get_current_user
+from app.auth.utils import create_access_token, get_current_user
 
 router = APIRouter()
 load_dotenv(dotenv_path="C:/Users/bbiig/Github/Ads-Dash/backend/.env.local")
@@ -130,6 +130,10 @@ async def google_login(data: GoogleLoginRequest, db: Session = Depends(get_db)):
     user = get_user_by_email(db, email)
     if not user:
         create_user(db, email=email, password=None, is_google=True, name=info.get("name"))
+    if not user.is_verified:
+        user.is_verified = True
+        db.commit()
+        db.refresh(user)
     access_token = utils.create_access_token(email)
     refresh_token = utils.create_refresh_token(email, remember_me=True)
     response = JSONResponse(content={
@@ -160,6 +164,23 @@ def refresh_token(request: Request):
         raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
     new_access_token = utils.create_access_token(email)
     return {"access_token": new_access_token}
+
+@router.post("/refresh")
+async def refresh_token_endpoint(refresh_token: Optional[str] = Cookie(None)):
+    if refresh_token is None:
+        raise HTTPException(status_code=401, detail="Missing refresh token")
+
+    payload = utils.decode_token(refresh_token)
+    if not payload:
+        raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
+
+    email = payload.get("email")
+    if not email:
+        raise HTTPException(status_code=400, detail="Invalid token payload")
+
+    new_access_token = utils.create_access_token(email)
+    return JSONResponse(content={"access_token": new_access_token})
+
 
 @router.post("/logout")
 def logout(response: Response):
