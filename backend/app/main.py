@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.models.user import User
 from app.auth import routes as auth_routes
 from app.database import Base, engine
+from app.config import settings
 
 Base.metadata.create_all(bind=engine)
 
@@ -13,9 +14,13 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
+allowed_origins = ["http://localhost:3000", "http://localhost:3001"]
+if settings.ENV == "production":
+    allowed_origins = [settings.FRONTEND_URL]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:3001"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

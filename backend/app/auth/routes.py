@@ -16,6 +16,7 @@ from app.auth.utils import create_access_token, get_current_user
 
 router = APIRouter()
 SECRET = settings.JWT_SECRET
+frontend_url = settings.FRONTEND_URL
 
 class RegisterRequest(BaseModel):
     name: str = Field(..., min_length=1)
@@ -45,7 +46,7 @@ def register(data: RegisterRequest, db: Session = Depends(get_db)):
     hashed_pw = utils.hash_password(data.password)
     create_user(db, email=data.email, password=hashed_pw, is_google=False, name=data.name)
     token = utils.create_email_verification_token(data.email)
-    verify_link = f"http://localhost:3000/verify-email?token={token}"
+    verify_link = f"{frontend_url}/verify-email?token={token}"
     utils.send_verification_email(data.email, token)
     return {
         "message": "Registration successful. Please check your email to verify.",

@@ -18,7 +18,7 @@ from sqlalchemy.orm import Session
 SECRET = settings.JWT_SECRET
 GOOGLE_CLIENT_ID = settings.GOOGLE_CLIENT_ID
 VERIFICATION_EXPIRY_HOURS = 1
-FRONTEND_URL = settings.FRONTEND_URL
+frontend_url = settings.FRONTEND_URL
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
 def hash_password(password: str) -> str:
@@ -36,7 +36,7 @@ def create_email_verification_token(email: str):
 
 def send_verification_email(email: str, token: str):
     print(f"📧 Mock email to {email} with link:")
-    print(f"http://localhost:3000/verify-email?token={token}")
+    print(f"{frontend_url}/verify-email?token={token}")
 
 def create_token(data: dict, expires_delta: timedelta) -> str:
     to_encode = data.copy()
@@ -74,7 +74,7 @@ def get_current_user(
     db: Session = Depends(get_db)
 ):
     try:
-        payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
+        payload = jwt.decode(token, SECRET, algorithms=["HS256"])
         email = payload.get("email")
         if not email:
             raise HTTPException(status_code=401, detail="Invalid token")
