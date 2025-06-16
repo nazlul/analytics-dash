@@ -1,4 +1,4 @@
-# analytics-dash
+# Ads Analytics Dashboard
 
 A fullstack web application for tracking and managing analytics across platforms. Built using **Next.js**, **FastAPI**, **PostgreSQL**, and **JWT authentication** with support for Google login.
 
