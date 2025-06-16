@@ -2,7 +2,7 @@
 
 /// <reference types="google.accounts" />
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { Icons } from "@/components/ui/icons";
 
 interface GoogleAuthButtonProps {
@@ -79,3 +79,4 @@ export function GoogleAuthButton({ isLoading }: GoogleAuthButtonProps) {
     </div>
   );
 }
+  

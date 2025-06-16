@@ -10,16 +10,15 @@ from email.message import EmailMessage
 from fastapi import Request, HTTPException, Depends, status
 from fastapi.security import OAuth2PasswordBearer
 from app.auth.schemas import User
-from app.config import JWT_SECRET
+from app.config import settings
 from app.models import get_user_by_email
 from app.database import get_db 
 from sqlalchemy.orm import Session
 
-load_dotenv(dotenv_path="C:/Users/bbiig/Github/Ads-Dash/backend/.env.local")
-SECRET = os.getenv("JWT_SECRET")
-GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
+SECRET = settings.JWT_SECRET
+GOOGLE_CLIENT_ID = settings.GOOGLE_CLIENT_ID
 VERIFICATION_EXPIRY_HOURS = 1
-FRONTEND_URL = os.getenv("FRONTEND_URL")
+FRONTEND_URL = settings.FRONTEND_URL
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
 def hash_password(password: str) -> str:

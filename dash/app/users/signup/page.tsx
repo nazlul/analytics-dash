@@ -50,41 +50,46 @@ export default function SignupPage() {
   }
 
   async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    const allPassed = Object.values(passwordValid).every(Boolean)
-    if (!allPassed) {
-      setErrorMessage("Password does not meet all requirements.")
-      return
-    }
-    if (form.password !== form.confirmPassword) {
-      setErrorMessage("Passwords do not match.")
-      return
-    }
-    if (!form.agree) {
-      setErrorMessage("You must agree to the terms and privacy policy.")
-      return
-    }
-    setIsLoading(true)
-    try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: form.name, email: form.email, password: form.password }),
-        credentials: "include",
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.detail || "Registration failed")
-      setErrorMessage(null)
-      localStorage.setItem("registeredEmail", form.email)
-      alert("Account created successfully! Please check your email to verify.")
-      window.open("https://mail.google.com/mail/u/0/#inbox", "_blank")
-      window.location.href = data.verify_link || "/users/signin"
-    } catch (err: any) {
-      setErrorMessage(err.message || "An error occurred")
-    } finally {
-      setIsLoading(false)
-    }
+  e.preventDefault()
+  const allPassed = Object.values(passwordValid).every(Boolean)
+  if (!allPassed) {
+    setErrorMessage("Password does not meet all requirements.")
+    return
   }
+  if (form.password !== form.confirmPassword) {
+    setErrorMessage("Passwords do not match.")
+    return
+  }
+  if (!form.agree) {
+    setErrorMessage("You must agree to the terms and privacy policy.")
+    return
+  }
+  setIsLoading(true)
+  try {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: form.name, email: form.email, password: form.password }),
+      credentials: "include",
+    })
+    const data = await res.json()
+    if (!res.ok) throw new Error(data.detail || "Registration failed")
+    setErrorMessage(null)
+    localStorage.setItem("registeredEmail", form.email)
+    alert("Account created successfully! Please check your email to verify.")
+    window.open("https://mail.google.com/mail/u/0/#inbox", "_blank")
+    window.location.href = data.verify_link || "/users/signin"
+  } catch (err: unknown) {
+    if (err instanceof Error) {
+      setErrorMessage(err.message)
+    } else {
+      setErrorMessage("An error occurred")
+    }
+  } finally {
+    setIsLoading(false)
+  }
+}
+
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-l from-[#439B82] to-[#35204D] bg-[length:200%_200%] animate-[gradientMove_6s_ease-in-out_infinite] px-4 relative">

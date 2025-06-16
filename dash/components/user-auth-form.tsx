@@ -12,6 +12,10 @@ interface UserAuthFormProps extends React.HTMLAttributes<HTMLDivElement> {
   type: "signin" | "signup";
 }
 
+interface CredentialResponse {
+  credential?: string;
+}
+
 export function UserAuthForm({ className, type, ...props }: UserAuthFormProps) {
   const [isLoading, setIsLoading] = React.useState(false);
   const [email, setEmail] = React.useState("");
@@ -84,32 +88,32 @@ export function UserAuthForm({ className, type, ...props }: UserAuthFormProps) {
     }
   }
 
-  React.useEffect(() => {
-    const initializeGoogle = () => {
-      if (window.google?.accounts) {
-        window.google.accounts.id.initialize({
-          client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!,
-          callback: async (credentialResponse: any) => {
-            setIsLoading(true);
-            const googleToken = credentialResponse.credential;
-            const res = await fetch("http://localhost:8000/auth/google-login", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ token: googleToken }),
-              credentials: "include",
-            });
-            const data = await res.json();
-            if (res.ok) window.location.href = "/dashboard";
-            else alert(data.error || "Google login failed");
-            setIsLoading(false);
-          },
-        });
-        window.google.accounts.id.renderButton(document.getElementById("google-button")!, { theme: "outline", size: "large" });
-      }
-    };
-    if (typeof window !== "undefined" && window.google) initializeGoogle();
-    else window.addEventListener("load", initializeGoogle);
-  }, []);
+React.useEffect(() => {
+  const initializeGoogle = () => {
+    if (window.google?.accounts) {
+      window.google.accounts.id.initialize({
+        client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!,
+        callback: async (credentialResponse: CredentialResponse) => {
+          setIsLoading(true);
+          const googleToken = credentialResponse.credential;
+          const res = await fetch("http://localhost:8000/auth/google-login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ token: googleToken }),
+            credentials: "include",
+          });
+          const data = await res.json();
+          if (res.ok) window.location.href = "/dashboard";
+          else alert(data.error || "Google login failed");
+          setIsLoading(false);
+        },
+      });
+      window.google.accounts.id.renderButton(document.getElementById("google-button")!, { theme: "outline", size: "large" });
+    }
+  };
+  if (typeof window !== "undefined" && window.google) initializeGoogle();
+  else window.addEventListener("load", initializeGoogle);
+}, []);
 
   return (
     <div className={cn("grid gap-6", className)} {...props}>

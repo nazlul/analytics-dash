@@ -11,12 +11,11 @@ from jose import JWTError, jwt
 from app.database import get_db
 from app.models import delete_user_by_email, get_user_by_email, create_user, User as DBUser
 from app.auth import utils
-from app.config import JWT_SECRET
+from app.config import settings
 from app.auth.utils import create_access_token, get_current_user
 
 router = APIRouter()
-load_dotenv(dotenv_path="C:/Users/bbiig/Github/Ads-Dash/backend/.env.local")
-SECRET = os.getenv("JWT_SECRET")
+SECRET = settings.JWT_SECRET
 
 class RegisterRequest(BaseModel):
     name: str = Field(..., min_length=1)
@@ -57,7 +56,7 @@ def register(data: RegisterRequest, db: Session = Depends(get_db)):
 @router.get("/verify-email")
 def verify_email(token: str, db: Session = Depends(get_db)):
     try:
-        payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
+        payload = jwt.decode(token, SECRET, algorithms=["HS256"])
         user = get_user_by_email(db, payload["email"])
         if not user:
             raise HTTPException(status_code=404, detail="User not found")

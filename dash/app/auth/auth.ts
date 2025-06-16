@@ -1,4 +1,4 @@
-export async function fetchProtectedData(): Promise<any> {
+export async function fetchProtectedData(): Promise<Record<string, unknown>> {
   let accessToken = localStorage.getItem("access_token");
   console.log("Using access token:", accessToken);
 
@@ -35,7 +35,7 @@ export async function fetchProtectedData(): Promise<any> {
     throw new Error("Request failed");
   }
 
-  const data = await res.json();
+  const data: Record<string, unknown> = await res.json();
   console.log("Protected data received:", data);
   return data;
 }
@@ -51,7 +51,7 @@ export async function refreshAccessToken(): Promise<boolean> {
     return false;
   }
 
-  const data = await res.json();
+  const data: { access_token: string } = await res.json();
   localStorage.setItem("access_token", data.access_token);
   console.log("Access token refreshed and stored.");
   return true;

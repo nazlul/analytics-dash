@@ -1,12 +1,25 @@
 import os
 from dotenv import load_dotenv
 
-load_dotenv(dotenv_path="C:/Users/bbiig/Github/Ads-Dash/backend/.env.local")
+env_mode = os.getenv("ENVIRONMENT", "development")
 
-GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
-GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
-JWT_SECRET = os.getenv("JWT_SECRET")
+if env_mode == "production":
+    dotenv_path = ".env.production"
+else:
+    dotenv_path = ".env.local"
 
-assert GOOGLE_CLIENT_ID, "Missing GOOGLE_CLIENT_ID in .env.local"
-assert GOOGLE_CLIENT_SECRET, "Missing GOOGLE_CLIENT_SECRET in .env.local"
-assert JWT_SECRET, "Missing JWT_SECRET in .env.local"
+load_dotenv(dotenv_path=dotenv_path)
+
+class Settings:
+    GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
+    GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
+    JWT_SECRET = os.getenv("JWT_SECRET")
+    DATABASE_URL = os.getenv("DATABASE_URL")
+    FRONTEND_URL = os.getenv("FRONTEND_URL")
+    ENVIRONMENT = env_mode
+
+    required = [GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, JWT_SECRET, DATABASE_URL]
+    for name, val in zip(['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'JWT_SECRET', 'DATABASE_URL'], required):
+        assert val, f"Missing required env: {name}"
+
+settings = Settings()
