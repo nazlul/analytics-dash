@@ -15,7 +15,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 
 allowed_origins = ["http://localhost:3000", "http://localhost:3001"]
-if settings.ENV == "production":
+if settings.ENVIRONMENT == "production":
     allowed_origins = [settings.FRONTEND_URL]
 
 app.add_middleware(
