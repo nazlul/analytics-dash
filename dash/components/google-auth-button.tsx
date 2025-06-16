@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+/// <reference types="google.accounts" />
+
+import { useEffect, useRef, useState } from "react";
 import { Icons } from "@/components/ui/icons";
 
 interface GoogleAuthButtonProps {
@@ -9,12 +11,10 @@ interface GoogleAuthButtonProps {
 
 export function GoogleAuthButton({ isLoading }: GoogleAuthButtonProps) {
   const divRef = useRef<HTMLDivElement | null>(null);
-  const [ready, setReady] = useState(false);
 
   useEffect(() => {
     if (window.google && window.google.accounts && divRef.current) {
       initializeGoogle();
-      setReady(true);
       return;
     }
 
@@ -25,7 +25,6 @@ export function GoogleAuthButton({ isLoading }: GoogleAuthButtonProps) {
 
     script.onload = () => {
       initializeGoogle();
-      setReady(true);
     };
 
     script.onerror = () => {
@@ -45,11 +44,11 @@ export function GoogleAuthButton({ isLoading }: GoogleAuthButtonProps) {
 
     window.google.accounts.id.initialize({
       client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!,
-      callback: async (response) => {
+      callback: async (response: google.accounts.id.CredentialResponse) => {
         const token = response.credential;
 
         try {
-          const res = await fetch("http://localhost:8000/auth/google-login", {
+          const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/google-login`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ token }),

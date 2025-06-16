@@ -2,7 +2,7 @@ export async function fetchProtectedData(): Promise<any> {
   let accessToken = localStorage.getItem("access_token");
   console.log("Using access token:", accessToken);
 
-  let res = await fetch("http://localhost:8000/auth/protected", {
+  let res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/protected`, {
     method: "GET",
     credentials: "include",
     headers: {
@@ -21,7 +21,7 @@ export async function fetchProtectedData(): Promise<any> {
     accessToken = localStorage.getItem("access_token");
     console.log("Refreshed access token:", accessToken);
 
-    res = await fetch("http://localhost:8000/auth/protected", {
+    res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/protected`, {
       method: "GET",
       credentials: "include",
       headers: {
@@ -41,7 +41,7 @@ export async function fetchProtectedData(): Promise<any> {
 }
 
 export async function refreshAccessToken(): Promise<boolean> {
-  const res = await fetch("http://localhost:8000/auth/refresh-token", {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/refresh-token`, {
     method: "POST",
     credentials: "include",
   });
