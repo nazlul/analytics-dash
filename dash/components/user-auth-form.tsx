@@ -58,13 +58,16 @@ export function UserAuthForm({ className, type, ...props }: UserAuthFormProps) {
     return Object.keys(newErrors).length === 0;
   };
 
+  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
+
   async function onSubmit(event: React.FormEvent) {
     event.preventDefault();
     if (!validate()) return;
     setIsLoading(true);
     setErrors({});
     try {
-      const res = await fetch(`http://localhost:8000/auth/${type === "signin" ? "login" : "register"}`, {
+      if (!baseUrl) throw new Error("API base URL not defined");
+      const res = await fetch(`${baseUrl}/auth/${type === "signin" ? "login" : "register"}`, {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
@@ -88,32 +91,48 @@ export function UserAuthForm({ className, type, ...props }: UserAuthFormProps) {
     }
   }
 
-React.useEffect(() => {
-  const initializeGoogle = () => {
-    if (window.google?.accounts) {
-      window.google.accounts.id.initialize({
-        client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!,
-        callback: async (credentialResponse: CredentialResponse) => {
-          setIsLoading(true);
-          const googleToken = credentialResponse.credential;
-          const res = await fetch("http://localhost:8000/auth/google-login", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ token: googleToken }),
-            credentials: "include",
+  React.useEffect(() => {
+    const initializeGoogle = () => {
+      if (window.google?.accounts) {
+        window.google.accounts.id.initialize({
+          client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!,
+          callback: async (credentialResponse: CredentialResponse) => {
+            setIsLoading(true);
+            try {
+              const googleToken = credentialResponse.credential;
+              const res = await fetch(`${baseUrl}/auth/google-login`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ token: googleToken }),
+                credentials: "include",
+              });
+              const data = await res.json();
+              if (res.ok) window.location.href = "/dashboard";
+              else alert(data.error || "Google login failed");
+            } catch {
+              alert("Network error during Google login");
+            } finally {
+              setIsLoading(false);
+            }
+          },
+        });
+        const googleBtn = document.getElementById("google-button");
+        if (googleBtn) {
+          window.google.accounts.id.renderButton(googleBtn, {
+            theme: "outline",
+            size: "large",
           });
-          const data = await res.json();
-          if (res.ok) window.location.href = "/dashboard";
-          else alert(data.error || "Google login failed");
-          setIsLoading(false);
-        },
-      });
-      window.google.accounts.id.renderButton(document.getElementById("google-button")!, { theme: "outline", size: "large" });
+        }
+      }
+    };
+
+    if (window.google) {
+      initializeGoogle();
+    } else {
+      window.addEventListener("load", initializeGoogle);
+      return () => window.removeEventListener("load", initializeGoogle);
     }
-  };
-  if (typeof window !== "undefined" && window.google) initializeGoogle();
-  else window.addEventListener("load", initializeGoogle);
-}, []);
+  }, [baseUrl]);
 
   return (
     <div className={cn("grid gap-6", className)} {...props}>
@@ -121,7 +140,15 @@ React.useEffect(() => {
         <div className="space-y-4">
           <div>
             <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" value={email} autoComplete={type === "signin" ? "email" : "username"} onChange={e => setEmail(e.target.value)} disabled={isLoading} className="mt-2" />
+            <Input
+              id="email"
+              type="email"
+              value={email}
+              autoComplete={type === "signin" ? "email" : "username"}
+              onChange={(e) => setEmail(e.target.value)}
+              disabled={isLoading}
+              className="mt-2"
+            />
             {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
           </div>
           <div>
@@ -132,11 +159,16 @@ React.useEffect(() => {
                 type={showPassword ? "text" : "password"}
                 value={password}
                 autoComplete={type === "signin" ? "current-password" : "new-password"}
-                onChange={e => setPassword(e.target.value)}
+                onChange={(e) => setPassword(e.target.value)}
                 disabled={isLoading}
                 className="mt-2 pr-10"
               />
-              <button type="button" className="absolute right-3 top-3 text-muted-foreground" onClick={() => setShowPassword(!showPassword)} tabIndex={-1}>
+              <button
+                type="button"
+                className="absolute right-3 top-3 text-muted-foreground"
+                onClick={() => setShowPassword(!showPassword)}
+                tabIndex={-1}
+              >
                 {showPassword ? <Eye size={16} /> : <EyeOff size={16} />}
               </button>
             </div>
@@ -144,33 +176,56 @@ React.useEffect(() => {
           </div>
           {isSignup && (
             <ul className="text-sm mt-2 ml-1 space-y-1">
-              <li className={passwordValid.minLength ? "text-green-600" : "text-gray-500"}>• At least 8 characters</li>
-              <li className={passwordValid.hasUppercase ? "text-green-600" : "text-gray-500"}>• At least one uppercase letter</li>
-              <li className={passwordValid.hasLowercase ? "text-green-600" : "text-gray-500"}>• At least one lowercase letter</li>
-              <li className={passwordValid.hasNumber ? "text-green-600" : "text-gray-500"}>• At least one number</li>
-              <li className={passwordValid.hasSpecialChar ? "text-green-600" : "text-gray-500"}>• At least one special character</li>
+              <li className={passwordValid.minLength ? "text-green-600" : "text-gray-500"}>
+                • At least 8 characters
+              </li>
+              <li className={passwordValid.hasUppercase ? "text-green-600" : "text-gray-500"}>
+                • At least one uppercase letter
+              </li>
+              <li className={passwordValid.hasLowercase ? "text-green-600" : "text-gray-500"}>
+                • At least one lowercase letter
+              </li>
+              <li className={passwordValid.hasNumber ? "text-green-600" : "text-gray-500"}>
+                • At least one number
+              </li>
+              <li className={passwordValid.hasSpecialChar ? "text-green-600" : "text-gray-500"}>
+                • At least one special character
+              </li>
             </ul>
           )}
           {type === "signin" && (
             <div className="flex items-center space-x-2">
-              <input type="checkbox" id="rememberMe" checked={rememberMe} onChange={() => setRememberMe(!rememberMe)} disabled={isLoading} />
+              <input
+                type="checkbox"
+                id="rememberMe"
+                checked={rememberMe}
+                onChange={() => setRememberMe(!rememberMe)}
+                disabled={isLoading}
+              />
               <Label htmlFor="rememberMe">Remember Me</Label>
             </div>
           )}
           {isSignup && (
             <div className="flex items-center space-x-2 mt-2">
-              <input type="checkbox" id="agree" checked={agree} onChange={() => setAgree(!agree)} disabled={isLoading} />
+              <input
+                type="checkbox"
+                id="agree"
+                checked={agree}
+                onChange={() => setAgree(!agree)}
+                disabled={isLoading}
+              />
               <Label htmlFor="agree">I agree to the terms and conditions</Label>
             </div>
           )}
           {errors.checkbox && <p className="text-red-500 text-sm">{errors.checkbox}</p>}
           {errors.general && <p className="text-red-500 text-sm text-center mt-2">{errors.general}</p>}
+
           <Button type="submit" className="w-full mt-2" disabled={isLoading}>
             {isLoading && <Icons.spinner className="mr-2 h-4 animate-spin" />}
             {type === "signin" ? "Sign In" : "Sign Up"}
           </Button>
         </div>
       </form>
-    </div>
+     </div>
   );
 }

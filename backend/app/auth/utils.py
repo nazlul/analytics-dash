@@ -2,7 +2,7 @@ import os
 import uuid
 from datetime import datetime, timedelta, timezone
 from dotenv import load_dotenv
-from passlib.hash import bcrypt
+from passlib.context import CryptContext
 from typing import Optional
 from jose import jwt, JWTError
 import httpx
@@ -20,12 +20,13 @@ GOOGLE_CLIENT_ID = settings.GOOGLE_CLIENT_ID
 VERIFICATION_EXPIRY_HOURS = 1
 frontend_url = settings.FRONTEND_URL
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 def hash_password(password: str) -> str:
-    return bcrypt.hash(password)
+    return pwd_context.hash(password)
 
 def verify_password(plain: str, hashed: str) -> bool:
-    return bcrypt.verify(plain, hashed)
+    return pwd_context.verify(plain, hashed)
 
 def create_email_verification_token(email: str):
     payload = {

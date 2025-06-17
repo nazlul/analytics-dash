@@ -12,8 +12,7 @@ class Settings:
         self.GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
         self.JWT_SECRET = os.getenv("JWT_SECRET")
         self.DATABASE_URL = os.getenv("DATABASE_URL")
-        self.FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")  
-
+        self.FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
         self._validate()
 
     def _validate(self):

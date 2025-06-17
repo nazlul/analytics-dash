@@ -9,7 +9,7 @@ export default async function Home() {
     return redirect("/users/signin");
   }
 
-  const res = await fetch(`${process.env.API_BASE_URL}/auth/refresh`, {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/refresh`, {
     method: "POST",
     headers: {
       Cookie: `refresh_token=${refreshToken.value}`,
