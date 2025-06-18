@@ -11,6 +11,11 @@ import {
   ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent
 } from "@/components/ui/chart"
 
+interface FacebookInsight {
+  campaign_name: string;
+  clicks: string; 
+}
+
 const chartConfig = {
   clicks: {
     label: "clicks",
@@ -31,8 +36,7 @@ export function LineChart() {
 
         if (!res.ok) throw new Error(json.detail || "Fetch failed")
 
-        // Convert raw Facebook response to recharts data
-        const formatted = json.data.map((item: any, index: number) => ({
+        const formatted = (json.data as FacebookInsight[]).map((item, index) => ({
           label: item.campaign_name || `Row ${index + 1}`,
           clicks: parseInt(item.clicks ?? "0"),
         }))
