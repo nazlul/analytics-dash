@@ -12,8 +12,8 @@ import {
 } from "@/components/ui/chart"
 
 interface FacebookInsight {
-  campaign_name: string;
-  clicks: string; 
+  campaign_name: string
+  clicks: string
 }
 
 const chartConfig = {
@@ -30,9 +30,8 @@ export function LineChart() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await fetch("http://localhost:8000/api/fb-insights")
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/fb-insights`)
         const json = await res.json()
-          console.log("Fetched Facebook insights:", json.data)
 
         if (!res.ok) throw new Error(json.detail || "Fetch failed")
 
@@ -42,8 +41,8 @@ export function LineChart() {
         }))
 
         setChartData(formatted)
-      } catch (err: any) {
-        setError(err.message)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Unknown error")
       }
     }
 
