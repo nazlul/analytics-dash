@@ -5,6 +5,7 @@ from app.models.user import User
 from app.auth import routes as auth_routes
 from app.database import Base, engine
 from app.config import settings
+from app.api import facebook
 
 Base.metadata.create_all(bind=engine)
 
@@ -27,3 +28,4 @@ app.add_middleware(
 )
 
 app.include_router(auth_routes.router, prefix="/auth")
+app.include_router(facebook.router, prefix="/api")

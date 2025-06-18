@@ -1,20 +1,15 @@
 "use client"
 
-import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts"
+import { useEffect, useState } from "react"
+import {
+  Area, AreaChart, CartesianGrid, XAxis, YAxis
+} from "recharts"
 import {
   Card, CardContent, CardHeader, CardTitle
 } from "@/components/ui/card"
 import {
   ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent
 } from "@/components/ui/chart"
-
-const chartData = [
-  { month: "Jan 1", clicks: 286 },
-  { month: "Jan 15", clicks: 305 },
-  { month: "Jan 29", clicks: 137 },
-  { month: "Feb 12", clicks: 73 },
-  { month: "Feb 26", clicks: 209 },
-]
 
 const chartConfig = {
   clicks: {
@@ -24,6 +19,36 @@ const chartConfig = {
 } satisfies ChartConfig
 
 export function LineChart() {
+  const [chartData, setChartData] = useState<{ label: string; clicks: number }[]>([])
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const res = await fetch("http://localhost:8000/api/fb-insights")
+        const json = await res.json()
+          console.log("Fetched Facebook insights:", json.data)
+
+        if (!res.ok) throw new Error(json.detail || "Fetch failed")
+
+        // Convert raw Facebook response to recharts data
+        const formatted = json.data.map((item: any, index: number) => ({
+          label: item.campaign_name || `Row ${index + 1}`,
+          clicks: parseInt(item.clicks ?? "0"),
+        }))
+
+        setChartData(formatted)
+      } catch (err: any) {
+        setError(err.message)
+      }
+    }
+
+    fetchData()
+  }, [])
+
+  if (error) return <div className="text-red-600">Error: {error}</div>
+  if (chartData.length === 0) return <div>Loading...</div>
+
   return (
     <Card className="w-full bg-[#FFF5EE]">
       <CardHeader className="pb-2">
@@ -37,7 +62,7 @@ export function LineChart() {
           >
             <CartesianGrid vertical={false} />
             <XAxis
-              dataKey="month"
+              dataKey="label"
               tickLine={false}
               axisLine={false}
               tickMargin={8}
@@ -47,7 +72,6 @@ export function LineChart() {
               tickLine={false}
               axisLine={false}
               tickMargin={8}
-              ticks={[100, 200, 300]}
               fontSize={12}
             />
             <ChartTooltip
@@ -56,7 +80,7 @@ export function LineChart() {
             />
             <Area
               dataKey="clicks"
-              type="natural"
+              type="monotone"
               fill="var(--color-clicks)"
               fillOpacity={0.2}
               stroke="var(--color-clicks)"
