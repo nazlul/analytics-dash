@@ -8,39 +8,60 @@ import {
   LabelList,
   XAxis,
   YAxis,
-  ResponsiveContainer
+  ResponsiveContainer,
 } from "recharts"
 import {
   Card,
   CardContent,
   CardHeader,
-  CardTitle
+  CardTitle,
 } from "@/components/ui/card"
 import {
-  ChartConfig,
   ChartContainer,
   ChartTooltip,
-  ChartTooltipContent
+  ChartTooltipContent,
 } from "@/components/ui/chart"
+import type { ChartConfig } from "@/components/ui/chart" 
 
-const chartConfig = {
+const chartColors: Record<string, string> = {
+  clicks: "#439B82",
+  impressions: "#35204D",
+  cpc: "#FFA366",
+  ctr: "#A9170A",
+}
+
+const chartConfig: Record<string, ChartConfig> = {
   clicks: {
-    label: "Clicks",
-    color: "#439B82",
+    label: { label: "Clicks" },
+    color: { color: chartColors.clicks },
+  },
+  impressions: {
+    label: { label: "Impressions" },
+    color: { color: chartColors.impressions },
+  },
+  cpc: {
+    label: { label: "Average CPC" },
+    color: { color: chartColors.cpc },
+  },
+  ctr: {
+    label: { label: "CTR" },
+    color: { color: chartColors.ctr },
   },
 }
+
 
 interface BarCProps {
   selectedYear: number
   selectedMonth: number
+  selectedMetric: "clicks" | "impressions" | "cpc" | "ctr"
 }
 
 interface CampaignData {
   campaign: string
-  clicks: number
+  value: number
 }
 
-export function BarC({ selectedYear, selectedMonth }: BarCProps) {
+export function BarC({ selectedYear, selectedMonth, selectedMetric }: BarCProps) {
   const [data, setData] = useState<CampaignData[]>([])
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState<boolean>(false)
@@ -63,7 +84,7 @@ export function BarC({ selectedYear, selectedMonth }: BarCProps) {
       const { since, until } = getDateRange()
       try {
         const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/fb-insights/monthly?since=${since}&until=${until}&metric=clicks`
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/fb-insights/monthly?since=${since}&until=${until}&metric=${selectedMetric}`
         )
         const json = await res.json()
 
@@ -71,18 +92,18 @@ export function BarC({ selectedYear, selectedMonth }: BarCProps) {
           throw new Error(typeof json.detail === "string" ? json.detail : JSON.stringify(json))
         }
 
-        const campaignClicks = new Map<string, number>()
+        const campaignValues = new Map<string, number>()
         for (const item of json as { campaign: string; metric_value: number }[]) {
           const campaign = item.campaign || "Unknown Campaign"
-          campaignClicks.set(
+          campaignValues.set(
             campaign,
-            (campaignClicks.get(campaign) || 0) + item.metric_value
+            (campaignValues.get(campaign) || 0) + item.metric_value
           )
         }
 
-        const arr = Array.from(campaignClicks.entries()).map(([campaign, clicks]) => ({
+        const arr = Array.from(campaignValues.entries()).map(([campaign, value]) => ({
           campaign,
-          clicks,
+          value,
         }))
 
         setData(arr)
@@ -93,12 +114,19 @@ export function BarC({ selectedYear, selectedMonth }: BarCProps) {
       }
     }
     fetchData()
-  }, [selectedMonth, selectedYear])
+  }, [selectedMonth, selectedYear, selectedMetric])
+
+  function formatValue(value: number) {
+    if (selectedMetric === "cpc" || selectedMetric === "ctr") {
+      return Number(value).toFixed(2)
+    }
+    return value.toString()
+  }
 
   return (
     <Card className="w-full h-full bg-[#FFF5EE] flex flex-col">
       <CardHeader className="pb-2">
-        <CardTitle className="text-base">Campaign Clicks</CardTitle>
+        <CardTitle className="text-base uppercase">{`Campaign ${selectedMetric}`}</CardTitle>
       </CardHeader>
 
       <CardContent className="flex-1 min-h-0 overflow-y-auto max-h-[350px]">
@@ -109,23 +137,23 @@ export function BarC({ selectedYear, selectedMonth }: BarCProps) {
         ) : data.length === 0 ? (
           <div className="text-red-600">No data available for the selected period</div>
         ) : (
-          <ChartContainer config={chartConfig} className="w-full h-full min-w-[300px]">
+          <ChartContainer config={chartConfig[selectedMetric]} className="w-full h-full min-w-[300px]">
             <ResponsiveContainer width="100%" height={60 * data.length}>
               <BarChart data={data} layout="vertical" margin={{ right: 16 }}>
                 <CartesianGrid horizontal={false} />
                 <YAxis dataKey="campaign" type="category" hide />
-                <XAxis dataKey="clicks" type="number" hide />
+                <XAxis dataKey="value" type="number" hide />
                 <ChartTooltip
                   cursor={false}
                   content={<ChartTooltipContent indicator="line" />}
                 />
-                <Bar dataKey="clicks" fill={chartConfig.clicks.color} radius={4} barSize={25}>
+                <Bar dataKey="value" fill={chartColors[selectedMetric]} radius={4} barSize={25}>
                   <LabelList
                     dataKey="campaign"
                     position="top"
                     className="fill-[#35204D] font-semibold whitespace-nowrap text-left"
                     fontSize={13}
-                    content={({ x, y, width, value }) => (
+                    content={({ x, y, value }) => (
                       <text
                         x={x}
                         y={Number(y) - 6}
@@ -140,10 +168,11 @@ export function BarC({ selectedYear, selectedMonth }: BarCProps) {
                     )}
                   />
                   <LabelList
-                    dataKey="clicks"
+                    dataKey="value"
                     position="right"
                     className="fill-[#35204D] font-bold"
                     fontSize={12}
+                    formatter={formatValue}
                   />
                 </Bar>
               </BarChart>

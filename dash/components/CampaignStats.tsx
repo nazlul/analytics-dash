@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react"
 
+export type Metric = "clicks" | "impressions" | "cpc" | "ctr"
+
 type Stats = {
   clicks: number
   impressions: number
@@ -12,9 +14,16 @@ type Stats = {
 interface CampaignStatsProps {
   selectedYear: number
   selectedMonth: number
+  selectedMetric: Metric
+  onMetricChange: (metric: Metric) => void
 }
 
-export default function CampaignStats({ selectedYear, selectedMonth }: CampaignStatsProps) {
+export default function CampaignStats({
+  selectedYear,
+  selectedMonth,
+  selectedMetric,
+  onMetricChange,
+}: CampaignStatsProps) {
   const [stats, setStats] = useState<Stats | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -33,7 +42,7 @@ export default function CampaignStats({ selectedYear, selectedMonth }: CampaignS
       const { since, until } = getDateRange()
 
       try {
-        const metrics = ["clicks", "impressions", "cpc", "ctr"] as const
+        const metrics: Metric[] = ["clicks", "impressions", "cpc", "ctr"]
 
         const results = await Promise.all(
           metrics.map(async (metric) => {
@@ -51,10 +60,7 @@ export default function CampaignStats({ selectedYear, selectedMonth }: CampaignS
               throw new Error(`Expected array but got ${typeof json}: ${JSON.stringify(json)}`)
             }
 
-            return {
-              metric,
-              data: json,
-            }
+            return { metric, data: json }
           })
         )
 
@@ -93,24 +99,48 @@ export default function CampaignStats({ selectedYear, selectedMonth }: CampaignS
     return <div className="text-[#FFF5EE] mt-4">Loading...</div>
   }
 
+  const metricCards = [
+    {
+      key: "clicks",
+      label: "Clicks",
+      value: stats.clicks.toLocaleString(),
+    },
+    {
+      key: "impressions",
+      label: "Impressions",
+      value: stats.impressions.toLocaleString(),
+    },
+    {
+      key: "cpc",
+      label: "Average CPC",
+      value: `₹${stats.cpc.toFixed(2)}`,
+    },
+    {
+      key: "ctr",
+      label: "CTR",
+      value: `${stats.ctr.toFixed(1)}%`,
+    },
+  ] as const
+
   return (
     <div className="grid lg:grid-cols-4 md:grid-cols-2 sm:grid-cols-1 gap-4">
-      {[
-        { label: "Clicks", value: stats.clicks.toLocaleString() },
-        { label: "Impressions", value: stats.impressions.toLocaleString() },
-        { label: "Average CPC", value: `₹${stats.cpc.toFixed(2)}` },
-        { label: "CTR", value: `${stats.ctr.toFixed(1)}%` },
-      ].map((item, index) => (
-        <div
-          key={index}
-          className="bg-[#FFF5EE] border rounded-xl p-4 shadow-sm flex flex-col justify-between h-24"
-        >
-          <div className="relative w-max">
-            <span className="text-xs text-muted-foreground font-medium">{item.label}</span>
-          </div>
-          <span className="text-2xl font-bold text-center mt-2">{item.value}</span>
-        </div>
-      ))}
+      {metricCards.map((item) => {
+        const isSelected = selectedMetric === item.key
+        return (
+          <button
+            key={item.key}
+            onClick={() => onMetricChange(item.key)}
+            className={`border rounded-xl p-4 shadow-sm flex flex-col justify-between h-24 text-left transition
+              ${isSelected ? "bg-[#f0fcf9] text-[#35204D] transform transition-all duration-100 border-3 border-[#439B82]" : "bg-[#FFF5EE] text-[#35204D]"}
+              hover:bg-[#d0efe6]`}
+          >
+            <span className={`text-xs font-medium ${isSelected ? "text-[#35204D]" : "text-muted-foreground"}`}>
+              {item.label}
+            </span>
+            <span className="text-2xl font-bold text-center mt-2">{item.value}</span>
+          </button>
+        )
+      })}
     </div>
   )
 }

@@ -23,18 +23,18 @@ const chartConfig = {
   }
 }
 
-interface PlatformData {
-  platform: string
-  clicks: number
-}
-
-export function PieC({
-  selectedYear,
-  selectedMonth
-}: {
+interface PieCProps {
   selectedYear: number
   selectedMonth: number
-}) {
+  selectedMetric: "clicks" | "impressions" | "cpc" | "ctr"
+}
+
+interface PlatformData {
+  platform: string
+  value: number
+}
+
+export function PieC({ selectedYear, selectedMonth, selectedMetric }: PieCProps) {
   const [data, setData] = useState<PlatformData[]>([])
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState<boolean>(false)
@@ -44,7 +44,7 @@ export function PieC({
     const until = new Date(selectedYear, selectedMonth, 0)
     return {
       since: since.toISOString().split("T")[0],
-      until: until.toISOString().split("T")[0]
+      until: until.toISOString().split("T")[0],
     }
   }
 
@@ -57,7 +57,7 @@ export function PieC({
       const { since, until } = getDateRange()
       try {
         const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/fb-insights/monthly?since=${since}&until=${until}&metric=clicks`
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/fb-insights/monthly?since=${since}&until=${until}&metric=${selectedMetric}`
         )
         const json = await res.json()
 
@@ -65,15 +65,15 @@ export function PieC({
           throw new Error(typeof json.detail === "string" ? json.detail : JSON.stringify(json))
         }
 
-        const platformClicks = new Map<string, number>()
+        const map = new Map<string, number>()
         for (const item of json as { publisher_platform: string; metric_value: number }[]) {
           const platform = item.publisher_platform || "Unknown"
-          platformClicks.set(platform, (platformClicks.get(platform) || 0) + item.metric_value)
+          map.set(platform, (map.get(platform) || 0) + item.metric_value)
         }
 
-        const arr = Array.from(platformClicks.entries()).map(([platform, clicks]) => ({
+        const arr = Array.from(map.entries()).map(([platform, value]) => ({
           platform,
-          clicks
+          value,
         }))
 
         setData(arr)
@@ -83,28 +83,29 @@ export function PieC({
         setLoading(false)
       }
     }
-    fetchData()
-  }, [selectedMonth, selectedYear])
 
-  const totalClicks = data.reduce((acc, cur) => acc + cur.clicks, 0)
+    fetchData()
+  }, [selectedMonth, selectedYear, selectedMetric])
+
+  const total = data.reduce((acc, cur) => acc + cur.value, 0)
 
   const platformColors: Record<string, string> = {
     facebook: "#439B82",
     instagram: "#35204D",
-    messenger: "#1877F2"
+    messenger: "#1877F2",
   }
 
+  function formatValue(value: number) {
+    if (selectedMetric === "cpc" || selectedMetric === "ctr") {
+      return Number(value).toFixed(2)
+    }
+    return value.toString()
+  }
+  
   return (
     <Card className="w-full h-full bg-[#FFF5EE] flex flex-col">
-      <CardHeader className="items-center pb-2 flex justify-between">
-        <div>
-          <CardTitle className="text-base">Publisher Platforms</CardTitle>
-          <CardDescription>
-            {`${new Date(selectedYear, selectedMonth - 1).toLocaleString("default", {
-              month: "long"
-            })} ${selectedYear}`}
-          </CardDescription>
-        </div>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-base uppercase">Publisher Platforms - {selectedMetric}</CardTitle>
       </CardHeader>
       <CardContent className="flex-1 min-h-0">
         {error ? (
@@ -114,25 +115,20 @@ export function PieC({
         ) : data.length === 0 ? (
           <div className="text-red-600">No data available for the selected period</div>
         ) : (
-          <ChartContainer config={chartConfig} className="w-full h-full">
+          <ChartContainer config={{ [selectedMetric]: { label: selectedMetric, color: "#439B82" } }} className="w-full h-full">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
                 <Pie
                   data={data}
-                  dataKey="clicks"
+                  dataKey="value"
                   nameKey="platform"
                   innerRadius="60%"
                   outerRadius="100%"
                   strokeWidth={5}
                 >
                   {data.map((entry, index) => (
-                    <Cell
-                      key={`cell-${index}`}
-                      fill={
-                        platformColors[entry.platform.toLowerCase()] || "#FFA366"
-                      }
-                    />
+                    <Cell key={index} fill={platformColors[entry.platform.toLowerCase()] || "#FFA366"} />
                   ))}
                   <Label
                     content={({ viewBox }) =>
@@ -144,9 +140,9 @@ export function PieC({
                           dominantBaseline="middle"
                           className="fill-[#35204D] text-xl font-bold"
                         >
-                          {totalClicks.toLocaleString()}
+                          {total.toLocaleString()}
                           <tspan x={viewBox.cx} dy="1.4em" className="fill-[#35204D] text-sm">
-                            Clicks
+                            {selectedMetric}
                           </tspan>
                         </text>
                       ) : null
@@ -161,3 +157,5 @@ export function PieC({
     </Card>
   )
 }
+
+     

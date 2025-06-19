@@ -7,6 +7,7 @@ import { LineChart } from "@/components/charts/lineChart"
 import { BarC } from "@/components/charts/barChart"
 import { PieC } from "@/components/charts/pieChart"
 import CampaignStats from "@/components/CampaignStats"
+import type { Metric } from "@/components/CampaignStats"
 import CampaignTable from "@/components/CampaignTable"
 import { fetchProtectedData } from "../auth/auth"
 import { DatePicker } from "@/components/DatePicker"
@@ -17,6 +18,7 @@ export default function Page() {
   const router = useRouter()
   const [selectedYear, setSelectedYear] = useState(currentYear)
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1)
+  const [selectedMetric, setSelectedMetric] = useState<Metric>("clicks") 
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -45,13 +47,18 @@ export default function Page() {
         </div>
 
         <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <LineChart selectedYear={selectedYear} selectedMonth={selectedMonth} />
-          <BarC selectedYear={selectedYear} selectedMonth={selectedMonth} />
-          <PieC selectedYear={selectedYear} selectedMonth={selectedMonth} />
+          <LineChart selectedYear={selectedYear} selectedMonth={selectedMonth} selectedMetric={selectedMetric}/>
+          <BarC selectedYear={selectedYear} selectedMonth={selectedMonth} selectedMetric={selectedMetric}/>
+          <PieC selectedYear={selectedYear} selectedMonth={selectedMonth} selectedMetric={selectedMetric}/>
         </section>
 
         <section className="mt-8">
-          <CampaignStats selectedYear={selectedYear} selectedMonth={selectedMonth}/>
+          <CampaignStats
+            selectedYear={selectedYear}
+            selectedMonth={selectedMonth}
+            selectedMetric={selectedMetric}
+            onMetricChange={setSelectedMetric}
+          />
         </section>
 
         <section className="mt-6">

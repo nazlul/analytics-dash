@@ -21,11 +21,11 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart"
 
-const chartConfig = {
-  clicks: {
-    label: "Clicks",
-    color: "#439B82",
-  },
+const chartColors: Record<string, string> = {
+  clicks: "#439B82",
+  impressions: "#35204D",
+  cpc: "#FFA366",
+  ctr: "#A9170A",
 }
 
 function formatDate(dateString: string) {
@@ -47,11 +47,13 @@ function generateXAxisTicks(year: number, month: number) {
 export function LineChart({
   selectedYear,
   selectedMonth,
+  selectedMetric,
 }: {
   selectedYear: number
   selectedMonth: number
+  selectedMetric: "clicks" | "impressions" | "cpc" | "ctr"
 }) {
-  const [chartData, setChartData] = useState<{ date: string; clicks: number }[]>([])
+  const [chartData, setChartData] = useState<{ date: string; value: number }[]>([])
   const [error, setError] = useState<string | null>(null)
 
   const getDateRange = () => {
@@ -71,7 +73,7 @@ export function LineChart({
       const { since, until } = getDateRange()
       try {
         const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/fb-insights/monthly?since=${since}&until=${until}&metric=clicks`
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/fb-insights/monthly?since=${since}&until=${until}&metric=${selectedMetric}`
         )
         const json = await res.json()
 
@@ -79,11 +81,11 @@ export function LineChart({
           throw new Error(typeof json.detail === "string" ? json.detail : JSON.stringify(json))
         }
 
-        const clicksPerDay = new Map<string, number>()
+        const metricPerDay = new Map<string, number>()
         for (const item of json as { date: string; metric_value: number }[]) {
-          clicksPerDay.set(
+          metricPerDay.set(
             item.date,
-            (clicksPerDay.get(item.date) || 0) + item.metric_value
+            (metricPerDay.get(item.date) || 0) + item.metric_value
           )
         }
 
@@ -93,7 +95,7 @@ export function LineChart({
           const dateStr = new Date(selectedYear, selectedMonth - 1, d).toISOString().split("T")[0]
           filledData.push({
             date: formatDate(dateStr),
-            clicks: clicksPerDay.get(dateStr) ?? 0,
+            value: metricPerDay.get(dateStr) ?? 0,
           })
         }
 
@@ -103,14 +105,14 @@ export function LineChart({
       }
     }
     fetchData()
-  }, [selectedMonth, selectedYear])
+  }, [selectedMonth, selectedYear, selectedMetric])
 
   const xTicks = generateXAxisTicks(selectedYear, selectedMonth)
 
   return (
     <Card className="w-full bg-[#FFF5EE]">
       <CardHeader className="pb-2">
-        <CardTitle className="text-base sm:text-lg">Clicks (Daily)</CardTitle>
+        <CardTitle className="text-base sm:text-lg uppercase">{selectedMetric}</CardTitle>
       </CardHeader>
       <CardContent className="h-[250px] sm:h-[300px] md:h-[350px]">
         {error ? (
@@ -118,7 +120,7 @@ export function LineChart({
         ) : chartData.length === 0 ? (
           <div>Loading...</div>
         ) : (
-          <ChartContainer config={chartConfig} className="w-full h-full">
+          <ChartContainer config={{}} className="w-full h-full">
             <AreaChart data={chartData} margin={{ left: -15, right: 12 }}>
               <CartesianGrid vertical={false} />
               <XAxis
@@ -135,11 +137,11 @@ export function LineChart({
                 content={<ChartTooltipContent indicator="line" />}
               />
               <Area
-                dataKey="clicks"
+                dataKey="value"
                 type="monotone"
-                fill="var(--color-clicks)"
+                fill={chartColors[selectedMetric]}
                 fillOpacity={0.2}
-                stroke="var(--color-clicks)"
+                stroke={chartColors[selectedMetric]}
               />
             </AreaChart>
           </ChartContainer>
