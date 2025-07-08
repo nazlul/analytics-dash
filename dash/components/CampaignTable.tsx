@@ -52,7 +52,7 @@ export default function CampaignTable() {
 
   const handleMouseEnter = (e: React.MouseEvent, text: string) => {
     const rect = (e.target as HTMLElement).getBoundingClientRect()
-    setTooltipPosition({ x: rect.left + rect.width / 2, y: rect.top - 10 })
+    setTooltipPosition({ x: rect.left + 30 + rect.width / 2, y: rect.top - 15 })
     setTooltip(text)
   }
 

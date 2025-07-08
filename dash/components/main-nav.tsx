@@ -81,7 +81,7 @@ const MainNav: React.FC = () => {
 
           {isAdmin && (
             <button
-              className="text-sm text-white bg-[#439B82] px-3 py-1.5 rounded cursor-pointer"
+              className="text-sm text-white bg-[#439B82] hover:bg-[#4a907c] px-3 py-1.5 rounded cursor-pointer"
               onClick={() => router.push("/admin")}
             >
               Admin Panel

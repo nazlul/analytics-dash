@@ -139,7 +139,7 @@ export default function AdminPage() {
       <p className="mb-6 text-center text-[#35204D]">Welcome, {admin?.email}</p>
 
       <section className="border p-4 rounded shadow-sm max-w-2xl mx-auto bg-[#439B82] text-white">
-        <h2 className="font-semibold text-xl text-[#35204D] mb-4 uppercase">🧑‍💻 User Management</h2>
+        <h2 className="font-semibold text-xl text-[#35204D] mb-4 uppercase">User Management</h2>
         {users.length === 0 ? (
           <p>No users found.</p>
         ) : (

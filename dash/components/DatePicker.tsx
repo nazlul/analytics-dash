@@ -33,7 +33,7 @@ export function DatePicker({ year, month, onChange }: DatePickerProps) {
       <select
         value={month}
         onChange={(e) => onChange(year, Number(e.target.value))}
-        className="border rounded px-2 py-1 text-sm bg-[#439B82] text-[#35204D] font-semibold"
+        className="border rounded px-2 py-1 text-sm bg-[#439B82] hover:bg-[#4a907c] text-[#35204D] font-semibold"
       >
         {months.map(({ name, value }) => {
           const isFutureMonth = year === currentYear && value > currentMonth;
@@ -54,7 +54,7 @@ export function DatePicker({ year, month, onChange }: DatePickerProps) {
             onChange(newYear, month);
           }
         }}
-        className="border rounded px-2 py-1 text-sm bg-[#439B82] text-[#35204D] font-semibold"
+        className="border rounded px-2 py-1 text-sm bg-[#439B82] hover:bg-[#4a907c] text-[#35204D] font-semibold"
       >
         {years.map((y) => (
           <option key={y} value={y}>
