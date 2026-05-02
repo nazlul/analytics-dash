@@ -13,10 +13,6 @@ FB_AD_ACCOUNT_ID = os.getenv("FB_AD_ACCOUNT_ID")
 VALID_METRICS = {"clicks", "impressions", "cpc", "ctr"}
 
 
-# =========================
-# 🟢 MOCK DATA
-# =========================
-
 mock_monthly_data = [
     {
         "date": "2026-04-01",
@@ -55,27 +51,18 @@ mock_all_time_data = {
 }
 
 
-# =========================
-# 📊 MONTHLY INSIGHTS
-# =========================
-
 @router.get("/fb-insights/monthly")
 async def get_monthly_insights(
     since: str = Query(...),
     until: str = Query(...),
     metric: str = Query("clicks", regex="^(clicks|impressions|cpc|ctr)$")
 ):
-    # ✅ Always return mock
     return mock_monthly_data
 
 
-# =========================
-# 📊 ALL-TIME INSIGHTS
-# =========================
 
 @router.get("/fb-insights/all-time")
 async def get_all_time_insights(
     limit: int = Query(100, ge=1, le=500),
 ):
-    # ✅ Always return mock
     return mock_all_time_data
